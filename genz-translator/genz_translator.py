@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Realtime GenZ translator — speak into the mic, hear it back in GenZ.
+"""Realtime GenZ translator - speak into the mic, hear it back in GenZ.
 
 Pipeline (all Gradium):
   mic (24kHz pcm) -> Gradium streaming STT (+VAD pause detection)
@@ -31,7 +31,7 @@ import gradium
 SAMPLE_RATE = 24000  # mic / STT rate; TTS output rate comes from its ready msg
 CHUNK = 1920  # 80ms at 24kHz, one VAD step
 VAD_PAUSE_PROB = 0.75  # inactivity_prob (0.5s horizon) above this = end of utterance
-VOICE_ID = "NbpkqMVS3CJeq2j8"  # Zoey — playful, upbeat, GenZ energy
+VOICE_ID = "NbpkqMVS3CJeq2j8"  # Zoey - playful, upbeat, GenZ energy
 
 # Any OpenAI-compatible chat-completions endpoint (see genz.py). Auth reuses
 # your GRADIUM_API_KEY.
@@ -170,7 +170,7 @@ async def live_mic(client: gradium.GradiumClient, http: aiohttp.ClientSession):
 
     async with client.stt_realtime(model_name="default", input_format="pcm") as stt:
         mic.start()
-        print("🎤 mic is live — say something (Ctrl-C to quit)\n")
+        print("🎤 mic is live - say something (Ctrl-C to quit)\n")
 
         async def sender():
             silence = np.zeros(CHUNK, dtype=np.int16).tobytes()

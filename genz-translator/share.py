@@ -1,10 +1,10 @@
-"""Downloadable share cards for the GenZ transcript — no database.
+"""Downloadable share cards for the GenZ transcript - no database.
 
 The two transcript lines are passed as query params to /card.png, which renders
 a branded 1200x630 PNG on the fly (Pillow). The page offers it as a download so
 people can attach it to a post on X, LinkedIn, etc. The card is self-branded
 with the Gradium wordmark and the app link, so the image stands on its own once
-it leaves the app — nothing to scrape, no link preview to rely on.
+it leaves the app - nothing to scrape, no link preview to rely on.
 """
 
 import functools
@@ -19,7 +19,7 @@ _HERE = pathlib.Path(__file__).parent
 _FONTS = _HERE / "static" / "fonts"
 _ASSETS = _HERE / "static" / "assets"
 
-# Card canvas — 1200x630 (1.91:1) renders cleanly in-feed on X and LinkedIn.
+# Card canvas - 1200x630 (1.91:1) renders cleanly in-feed on X and LinkedIn.
 W, H = 1200, 630
 PAD = 70
 
@@ -149,14 +149,14 @@ def render_card(said: str, genz: str) -> bytes:
     d.text((x, 50), "TRANSLATOR", font=hf, fill=INK)
     d.line((PAD, 128, W - PAD, 128), fill=(35, 35, 46), width=2)
 
-    # what I said — plain speech in mono
+    # what I said - plain speech in mono
     said_font = _font("IBMPlexMono-Regular.ttf", 30)
     _draw_block(d, "WHAT I SAID", DIM, said, said_font, INK, 150, 42, 3)
 
     # divider
     d.line((PAD, 336, W - PAD, 336), fill=(35, 35, 46), width=2)
 
-    # what genz hears — the punchline, big + acid
+    # what genz hears - the punchline, big + acid
     genz_font = _font("Unbounded.ttf", 36, "Bold")
     _draw_block(d, "WHAT GENZ HEARS", ACID, genz, genz_font, ACID, 356, 46, 3)
 

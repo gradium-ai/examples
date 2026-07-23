@@ -224,7 +224,7 @@
   }
   .status.live { color: var(--acid); }
 
-  /* Powered by Gradium — mirrors the footer badge in the Gradium demo apps */
+  /* Powered by Gradium - mirrors the footer badge in the Gradium demo apps */
   .powered {
     display: flex;
     align-items: center;
@@ -245,7 +245,7 @@
     filter: brightness(1.7); /* lift the gray wordmark on the dark bg */
   }
 
-  /* share row — appears once a line locks in */
+  /* share row - appears once a line locks in */
   .share {
     display: none;
     flex-direction: column;
@@ -349,7 +349,7 @@ let live = false;
 let currentLang = "en"; // target GenZ language (STT itself is multilingual)
 const segments = new Map(); // segment id -> Segment
 
-// language picker — selects the output language; reconnects if mid-session
+// language picker - selects the output language; reconnects if mid-session
 const langBar = document.getElementById("langs");
 langBar.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-lang]");
@@ -394,7 +394,7 @@ downloadBtn.addEventListener("click", async () => {
     URL.revokeObjectURL(url);
   } catch (err) {
     console.error(err);
-    downloadBtn.innerHTML = "download failed — try again";
+    downloadBtn.innerHTML = "download failed - try again";
     setTimeout(() => { downloadBtn.innerHTML = original; }, 2500);
   } finally {
     downloadBtn.disabled = false;
@@ -424,7 +424,7 @@ const REVEAL_FAST_MS = 60;   // catch-up cadence once a segment is final
 
 // One segment = one VAD-delimited chunk of speech, but all segments render
 // into the SAME caption element: the transcript reads as one growing lyric.
-// Lit words are permanent — rewrites may only extend or adjust unlit words.
+// Lit words are permanent - rewrites may only extend or adjust unlit words.
 class Segment {
   constructor() {
     empty.style.display = "none";
@@ -474,7 +474,7 @@ class Segment {
     if (isFinal) {
       // the final is what the server commits as context for the next
       // segment, so the display must match it: correct the segment's tail
-      // (only divergent words rewind — like live-caption corrections)
+      // (only divergent words rewind - like live-caption corrections)
       this.done = true;
       while (this.spans.length > l) this.spans.pop().remove();
       this.queue = target.slice(this.spans.length);

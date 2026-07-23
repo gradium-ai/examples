@@ -3,7 +3,7 @@
 Gradium's STT is multilingual, so the user can speak any supported language; the
 selected language (from the UI picker) chooses which slang glossary and which
 in-language system prompt the LLM rewrite uses. Glossary files are loaded per
-language and are optional — a missing file just yields an empty glossary.
+language and are optional - a missing file just yields an empty glossary.
 """
 
 import json
@@ -67,11 +67,11 @@ Rules:
 - Keep it SHORTER or equal in length to the input. Punchy.
 - Keep the original meaning intact, just maximally GenZ-ify the delivery.
 - The input may be a FRAGMENT of a sentence still being spoken. Translate only
-  what is there — NEVER invent a continuation or add words beyond the input.
+  what is there - NEVER invent a continuation or add words beyond the input.
 - You are subtitling ONE continuous stream of speech. When given "translation
   so far", your output is the NEXT PIECE of that same running caption: never
   repeat or rephrase what is already translated, never restart with greetings
-  or interjections — it must read as a seamless continuation.
+  or interjections - it must read as a seamless continuation.
 {example}
 """
 

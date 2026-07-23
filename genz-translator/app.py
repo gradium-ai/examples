@@ -1,8 +1,8 @@
-"""GenZ live transcript — speak normally, read it in GenZ, near-realtime.
+"""GenZ live transcript - speak normally, read it in GenZ, near-realtime.
 
 Browser mic audio (24kHz pcm int16) streams over a websocket to Gradium's
 realtime STT. As words arrive, the current utterance is continuously
-re-translated into GenZ and streamed to the page WHILE you're still talking —
+re-translated into GenZ and streamed to the page WHILE you're still talking -
 each rewrite updates the same transcript card in place. When the built-in VAD
 hears you pause, a final translation locks the card and the next one starts.
 

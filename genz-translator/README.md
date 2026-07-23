@@ -1,6 +1,6 @@
 # GenZ Realtime Translator 💅
 
-Speak normally → read your words in GenZ, live. No TTS — the GenZ text IS the
+Speak normally → read your words in GenZ, live. No TTS - the GenZ text IS the
 transcript. 100% Gradium:
 
 ```
@@ -45,7 +45,7 @@ uv run uvicorn app:app --port 8402
 Then open <http://127.0.0.1:8402>, hit the mic button, allow mic access, and
 start yapping.
 
-> Note: embedded preview panels often can't grant mic permission — open the URL
+> Note: embedded preview panels often can't grant mic permission - open the URL
 > in a normal Chrome/Safari tab.
 
 The GenZ transcript is ONE continuous caption that grows karaoke-style: words
@@ -56,12 +56,12 @@ context), so pauses never restart the sentence or re-greet.
 
 ## Files
 
-- [app.py](app.py) — FastAPI backend: browser audio → Gradium STT → LLM → streamed tokens
-- [static/index.html](static/index.html) — the UI (mic button + live GenZ transcript)
-- [genz.py](genz.py) — shared glossary loading + streaming LLM translation
-- [share.py](share.py) — renders the downloadable share card
-- [genz_slang.json](genz_slang.json) — the slang repository; edit it to teach the translator new words (per-language variants: `.fr`, `.de`, `.pt`, `.es`)
-- [genz_translator.py](genz_translator.py) — terminal-only version that speaks the translation out loud via Gradium TTS. Needs the extra audio dep: `uv sync --extra terminal`, then `uv run python genz_translator.py`
+- [app.py](app.py) - FastAPI backend: browser audio → Gradium STT → LLM → streamed tokens
+- [static/index.html](static/index.html) - the UI (mic button + live GenZ transcript)
+- [genz.py](genz.py) - shared glossary loading + streaming LLM translation
+- [share.py](share.py) - renders the downloadable share card
+- [genz_slang.json](genz_slang.json) - the slang repository; edit it to teach the translator new words (per-language variants: `.fr`, `.de`, `.pt`, `.es`)
+- [genz_translator.py](genz_translator.py) - terminal-only version that speaks the translation out loud via Gradium TTS. Needs the extra audio dep: `uv sync --extra terminal`, then `uv run python genz_translator.py`
 
 ## Tuning
 

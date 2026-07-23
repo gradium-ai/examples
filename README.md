@@ -8,7 +8,7 @@
 
 ---
 
-This is a collection of example apps built on Gradium's streaming **speech-to-text**, **text-to-speech**, and hosted **LLM** APIs — used directly, without any framework in between.
+This is a collection of example apps built on Gradium's streaming **speech-to-text**, **text-to-speech**, and hosted **LLM** APIs - used directly, without any framework in between.
 
 If you want a batteries-included voice-agent framework instead, see [Gradbot](https://github.com/gradium-ai/gradbot). These examples are for learning the raw APIs and copying patterns into your own app.
 
