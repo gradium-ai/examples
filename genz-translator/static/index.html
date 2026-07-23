@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>genz translator 💅</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b10;
+    --ink: #f2f2ef;
+    --acid: #c8ff2e;
+    --pink: #ff2ec4;
+    --dim: #6f6f7d;
+    --card: #14141c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* grain */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 50;
+  }
+  /* glow blobs */
+  .blob {
+    position: fixed; border-radius: 50%; filter: blur(120px); opacity: .16;
+    pointer-events: none; z-index: 0;
+  }
+  .blob.a { width: 44vw; height: 44vw; background: var(--pink); top: -18vw; right: -12vw; }
+  .blob.b { width: 38vw; height: 38vw; background: var(--acid); bottom: -16vw; left: -10vw; }
+
+  /* ticker */
+  .ticker {
+    flex: 0 0 auto;
+    border-bottom: 1px solid #23232e;
+    background: #0e0e15;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: lowercase;
+    color: var(--dim);
+    user-select: none;
+    position: relative; z-index: 2;
+  }
+  .ticker__inner {
+    display: inline-block;
+    padding: 8px 0;
+    animation: scroll 40s linear infinite;
+  }
+  .ticker b { color: var(--acid); font-weight: 500; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  header {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 26px 16px 10px;
+    position: relative; z-index: 2;
+  }
+  h1 {
+    font-family: "Unbounded", sans-serif;
+    font-weight: 900;
+    font-size: clamp(26px, 5vw, 46px);
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  h1 .zap { color: var(--acid); }
+  h1 .tilt {
+    display: inline-block;
+    color: var(--bg);
+    background: var(--pink);
+    padding: 0 .18em;
+    transform: rotate(-2deg) translateY(-.04em);
+  }
+  .tag { margin-top: 10px; color: var(--dim); font-size: 13px; }
+  .tag em { color: var(--ink); font-style: normal; border-bottom: 2px solid var(--acid); }
+
+  /* language picker */
+  .langs {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .langs button {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: .08em;
+    color: var(--dim);
+    background: transparent;
+    border: 1px solid #23232e;
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+  .langs button:hover { color: var(--ink); border-color: #3a3a48; }
+  .langs button.on {
+    color: var(--bg);
+    background: var(--acid);
+    border-color: var(--acid);
+    font-weight: 500;
+  }
+
+  /* transcript */
+  main {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px clamp(16px, 8vw, 120px) 30px;
+    position: relative; z-index: 2;
+    scrollbar-width: thin;
+    scrollbar-color: #2b2b38 transparent;
+    display: flex;
+    flex-direction: column;
+  }
+  .empty {
+    color: var(--dim);
+    text-align: center;
+    margin: auto;
+    font-size: 14px;
+    line-height: 2;
+  }
+  /* one continuous caption, centered like a lyrics screen */
+  .caption-wrap {
+    margin: auto; /* dead center while it fits, scrolls once it grows */
+    width: 100%;
+    max-width: 950px;
+    text-align: center;
+    animation: pop .35s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  @keyframes pop { from { transform: translateY(10px) scale(.98); opacity: 0; } }
+  .caption {
+    font-family: "Unbounded", sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px, 4.4vw, 42px);
+    line-height: 1.55;
+    color: var(--ink);
+    overflow-wrap: break-word;
+  }
+  /* karaoke words: revealed one by one, newest glows */
+  .word {
+    display: inline-block;
+    color: var(--ink);
+    animation: wordin .22s cubic-bezier(.2, 1.4, .4, 1);
+    transition: color .35s, text-shadow .35s;
+  }
+  @keyframes wordin {
+    from { opacity: 0; transform: translateY(.35em) scale(.9); filter: blur(3px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+  .word.now {
+    color: var(--acid);
+    text-shadow: 0 0 16px rgba(200, 255, 46, .5);
+  }
+
+  /* interim ghost line */
+  .ghost {
+    color: var(--dim);
+    font-style: italic;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 22px;
+    min-height: 22px;
+  }
+  .ghost:empty { display: none; }
+  .ghost::before { content: "hearing: "; color: #4a4a56; font-style: normal; }
+
+  /* dock with mic */
+  .dock {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0 22px;
+    position: relative; z-index: 2;
+  }
+  .mic {
+    width: 86px; height: 86px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--acid);
+    color: #0b0b10;
+    display: grid;
+    place-items: center;
+    position: relative;
+    transition: transform .15s, background .2s;
+  }
+  .mic:hover { transform: scale(1.06) rotate(-3deg); }
+  .mic:active { transform: scale(.94); }
+  .mic svg { width: 36px; height: 36px; }
+  .mic.live { background: var(--pink); color: var(--ink); }
+  .mic.live::before, .mic.live::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--pink);
+    animation: ring 1.6s ease-out infinite;
+  }
+  .mic.live::after { animation-delay: .8s; }
+  @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
+  .status {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .status.live { color: var(--acid); }
+
+  /* Powered by Gradium — mirrors the footer badge in the Gradium demo apps */
+  .powered {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .powered:hover { opacity: .8; }
+  .powered span {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: rgba(242, 242, 239, .82);
+  }
+  .powered img {
+    height: 24px;
+    filter: brightness(1.7); /* lift the gray wordmark on the dark bg */
+  }
+
+  /* share row — appears once a line locks in */
+  .share {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .share.on { display: flex; }
+  .share__hint {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: lowercase;
+    color: var(--dim);
+  }
+  .share button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid #2b2b38;
+    border-radius: 999px;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s, transform .12s;
+  }
+  .share button:hover {
+    border-color: var(--acid);
+    color: var(--acid);
+    transform: translateY(-1px);
+  }
+  .share button svg { width: 15px; height: 15px; fill: currentColor; }
+</style>
+</head>
+<body>
+  <div class="blob a"></div><div class="blob b"></div>
+
+  <div class="ticker"><div class="ticker__inner" id="ticker"></div></div>
+
+  <header>
+    <h1><span class="zap">GEN</span><span class="tilt">Z</span> TRANSLATOR</h1>
+    <p class="tag">say it normal. read it <em>zoomer</em>. no cap.</p>
+    <div class="langs" id="langs">
+      <button data-lang="en" class="on">EN</button>
+      <button data-lang="fr">FR</button>
+      <button data-lang="de">DE</button>
+      <button data-lang="pt">PT</button>
+      <button data-lang="es">ES</button>
+    </div>
+  </header>
+
+  <main id="feed">
+    <p class="empty" id="empty">
+      hit the mic &amp; start yapping 🎤<br>
+      your words come back fully genz-ified, live
+    </p>
+    <div class="caption-wrap" id="capwrap" hidden>
+      <div class="caption" id="caption"></div>
+      <div class="ghost" id="ghost"></div>
+    </div>
+  </main>
+
+  <div class="dock">
+    <button class="mic" id="mic" title="start/stop">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v5a4 4 0 0 0 4 4Zm6-4a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.94V22h2v-3.06A8 8 0 0 0 20 11h-2Z"/></svg>
+    </button>
+    <div class="status" id="status">tap to yap</div>
+    <div class="share" id="share">
+      <button id="download" title="Download your GenZ card">
+        <svg viewBox="0 0 24 24"><path d="M12 3a1 1 0 0 1 1 1v9.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414L11 13.586V4a1 1 0 0 1 1-1ZM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"/></svg>
+        Download image
+      </button>
+      <span class="share__hint">post it on X &amp; LinkedIn</span>
+    </div>
+    <a class="powered" href="https://gradium.ai" target="_blank" rel="noopener noreferrer">
+      <span>Powered by</span>
+      <img src="/gradium-logo.svg" alt="Gradium">
+    </a>
+  </div>
+
+<script>
+const TERMS = ["no cap","rizz","slaps","bussin","delulu","it's giving","cooked","lock in","fr fr","goated","mid","bet","say less","crash out","aura","touch grass","big yikes","ate","sigma","rent free","on god","glow up","hits different","main character","situationship","green flag"];
+document.getElementById("ticker").innerHTML =
+  Array(2).fill(TERMS.map(t => ` <b>${t}</b> ✦`).join("")).join("");
+
+const micBtn = document.getElementById("mic");
+const statusEl = document.getElementById("status");
+const feed = document.getElementById("feed");
+const ghost = document.getElementById("ghost");
+const empty = document.getElementById("empty");
+const capwrap = document.getElementById("capwrap");
+const caption = document.getElementById("caption");
+const shareRow = document.getElementById("share");
+
+let ws = null, audioCtx = null, stream = null, node = null;
+let live = false;
+let currentLang = "en"; // target GenZ language (STT itself is multilingual)
+const segments = new Map(); // segment id -> Segment
+
+// language picker — selects the output language; reconnects if mid-session
+const langBar = document.getElementById("langs");
+langBar.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-lang]");
+  if (!btn || btn.dataset.lang === currentLang) return;
+  currentLang = btn.dataset.lang;
+  [...langBar.children].forEach((b) => b.classList.toggle("on", b === btn));
+  if (live) { stop(); start().catch((err) => { console.error(err); stop(); }); }
+});
+
+// Full-session transcript, accumulated across every finalized line so a share
+// captures everything said between tapping the mic and stopping.
+let saidAll = "", genzAll = "";
+const SHARE_CAP = 600; // keep the URL well under browser/intent limits
+
+// Base URL of this app (works at the root or behind any path prefix), the
+// same way the /ws URL is derived below.
+function appBase() {
+  return location.origin + location.pathname.replace(/\/[^/]*$/, "");
+}
+function cardUrl() {
+  const q = new URLSearchParams({
+    said: saidAll.slice(0, SHARE_CAP),
+    genz: genzAll.slice(0, SHARE_CAP),
+  });
+  return `${appBase()}/card.png?${q}`;
+}
+
+const downloadBtn = document.getElementById("download");
+downloadBtn.addEventListener("click", async () => {
+  const original = downloadBtn.innerHTML;
+  downloadBtn.disabled = true;
+  try {
+    const res = await fetch(cardUrl());
+    if (!res.ok) throw new Error(`card ${res.status}`);
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "genz-translator.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    downloadBtn.innerHTML = "download failed — try again";
+    setTimeout(() => { downloadBtn.innerHTML = original; }, 2500);
+  } finally {
+    downloadBtn.disabled = false;
+  }
+});
+
+const WORKLET = URL.createObjectURL(new Blob([`
+  class PCMTap extends AudioWorkletProcessor {
+    process(inputs) {
+      const ch = inputs[0][0];
+      if (ch) this.port.postMessage(ch.slice(0));
+      return true;
+    }
+  }
+  registerProcessor("pcm-tap", PCMTap);
+`], { type: "application/javascript" }));
+
+function setStatus(text, isLive) {
+  statusEl.textContent = text;
+  statusEl.classList.toggle("live", !!isLive);
+}
+
+function scrollFeed() { feed.scrollTop = feed.scrollHeight; }
+
+const REVEAL_MS = 130;       // karaoke cadence while speaking
+const REVEAL_FAST_MS = 60;   // catch-up cadence once a segment is final
+
+// One segment = one VAD-delimited chunk of speech, but all segments render
+// into the SAME caption element: the transcript reads as one growing lyric.
+// Lit words are permanent — rewrites may only extend or adjust unlit words.
+class Segment {
+  constructor() {
+    empty.style.display = "none";
+    capwrap.hidden = false;
+    // own inline container: segments may reveal concurrently (fast catch-up
+    // of segment N overlapping segment N+1), words must never interleave
+    this.el = document.createElement("span");
+    caption.appendChild(this.el);
+    this.spans = [];   // revealed word spans (inside this.el)
+    this.queue = [];   // words waiting to light up
+    this.timer = null;
+    this.done = false;
+  }
+
+  // Karaoke reveal: one word lights up per tick, newest carries the glow.
+  tick() {
+    const word = this.queue.shift();
+    if (word === undefined) {
+      clearInterval(this.timer);
+      this.timer = null;
+      if (this.done) this.finish();
+      return;
+    }
+    caption.querySelector(".word.now")?.classList.remove("now");
+    const span = document.createElement("span");
+    span.className = "word now";
+    span.textContent = word;
+    this.el.appendChild(span);
+    this.el.appendChild(document.createTextNode(" ")); // real space: copyable text
+    this.spans.push(span);
+    scrollFeed();
+  }
+
+  schedule(ms) {
+    if (this.timer) return;
+    this.timer = setInterval(() => this.tick(), ms);
+    this.tick(); // first word immediately
+  }
+
+  update(text, isFinal) {
+    const target = text.split(/\s+/).filter(Boolean);
+    const shown = this.spans.map((s) => s.textContent);
+    const all = shown.concat(this.queue);
+    let l = 0; // common prefix between what we show/plan and the new rewrite
+    while (l < all.length && l < target.length && all[l] === target[l]) l++;
+
+    if (isFinal) {
+      // the final is what the server commits as context for the next
+      // segment, so the display must match it: correct the segment's tail
+      // (only divergent words rewind — like live-caption corrections)
+      this.done = true;
+      while (this.spans.length > l) this.spans.pop().remove();
+      this.queue = target.slice(this.spans.length);
+      if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      if (this.queue.length) this.schedule(REVEAL_FAST_MS);
+      else this.finish();
+    } else if (l >= this.spans.length) {
+      // rewrite agrees with every lit word: adopt its tail for the unlit part
+      this.queue = target.slice(this.spans.length);
+      if (this.queue.length) this.schedule(REVEAL_MS);
+    }
+    // non-final disagreement with lit words: hold steady, next rewrite or
+    // the final will reconcile
+  }
+
+  finish() {
+    this.spans.at(-1)?.classList.remove("now");
+    ghost.textContent = "";
+    scrollFeed();
+  }
+}
+
+function onMessage(ev) {
+  const msg = JSON.parse(ev.data);
+  if (msg.type === "ready") {
+    setStatus("listening… start yapping", true);
+  } else if (msg.type === "partial") {
+    empty.style.display = "none";
+    capwrap.hidden = false;
+    ghost.textContent = msg.text;
+    scrollFeed();
+  } else if (msg.type === "genz_live" || msg.type === "genz_done") {
+    let seg = segments.get(msg.id);
+    if (!seg) { seg = new Segment(); segments.set(msg.id, seg); }
+    seg.update(msg.text, msg.type === "genz_done");
+    if (msg.type === "genz_done") {
+      // a line locked in: fold it into the shareable session transcript
+      if (msg.src) saidAll += (saidAll ? " " : "") + msg.src;
+      genzAll += (genzAll ? " " : "") + msg.text;
+      shareRow.classList.add("on");
+    }
+  }
+}
+
+async function start() {
+  setStatus("connecting…");
+  // fresh session: segment ids restart at 0 on the server
+  segments.forEach((s) => s.timer && clearInterval(s.timer));
+  segments.clear();
+  caption.textContent = "";
+  capwrap.hidden = true;
+  empty.style.display = "";
+  // fresh session: clear the shareable transcript (buttons re-appear once a
+  // new line finalizes; they linger after stop so you can still share)
+  saidAll = ""; genzAll = "";
+  shareRow.classList.remove("on");
+  stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
+  });
+
+  // Build the /ws URL relative to the page path so it works both at the root
+  // and behind any path prefix.
+  const wsProto = location.protocol === "https:" ? "wss" : "ws";
+  const wsBase = location.pathname.replace(/\/[^/]*$/, "");
+  ws = new WebSocket(`${wsProto}://${location.host}${wsBase}/ws?lang=${currentLang}`);
+  ws.onmessage = onMessage;
+  ws.onclose = () => live && stop();
+  await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
+
+  audioCtx = new AudioContext({ sampleRate: 24000 });
+  await audioCtx.audioWorklet.addModule(WORKLET);
+  node = new AudioWorkletNode(audioCtx, "pcm-tap");
+  audioCtx.createMediaStreamSource(stream).connect(node);
+
+  // batch worklet frames into 80ms (1920 samples) int16 chunks
+  let buf = new Float32Array(0);
+  node.port.onmessage = (e) => {
+    const merged = new Float32Array(buf.length + e.data.length);
+    merged.set(buf); merged.set(e.data, buf.length);
+    buf = merged;
+    while (buf.length >= 1920) {
+      const pcm = new Int16Array(1920);
+      for (let i = 0; i < 1920; i++)
+        pcm[i] = Math.max(-32768, Math.min(32767, buf[i] * 32768));
+      if (ws?.readyState === WebSocket.OPEN) ws.send(pcm.buffer.slice(0));
+      buf = buf.slice(1920);
+    }
+  };
+
+  live = true;
+  micBtn.classList.add("live");
+}
+
+function stop() {
+  live = false;
+  micBtn.classList.remove("live");
+  setStatus("tap to yap");
+  ghost.textContent = "";
+  node?.disconnect(); node = null;
+  stream?.getTracks().forEach(t => t.stop()); stream = null;
+  audioCtx?.close(); audioCtx = null;
+  if (ws?.readyState === WebSocket.OPEN) ws.close();
+  ws = null;
+}
+
+micBtn.addEventListener("click", () => {
+  if (live) return stop();
+  start().catch((err) => {
+    console.error(err);
+    setStatus("mic blocked? check permissions");
+    stop();
+  });
+});
+</script>
+</body>
+</html>
