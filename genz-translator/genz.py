@@ -107,6 +107,14 @@ async def llm_genz_stream(
         )
     else:
         prompt = text
+    # PERF / server-side follow-up: the system prompt (the whole slang glossary,
+    # ~1.5k tokens) is byte-identical on every call for a given language, and we
+    # fire many calls per utterance. It goes FIRST in `messages` so it forms a
+    # stable prefix. If the LLM server has automatic prefix caching enabled,
+    # those glossary tokens are cached after the first hit and time-to-first-
+    # token stays flat as the bank grows - making per-request term "retrieval"
+    # (indexing/RAG) unnecessary at this scale. TODO: confirm prefix caching is
+    # ON for the LLM endpoint; that, not the JSON format, is the lever.
     payload = {
         "model": LLM_MODEL,
         "messages": [

@@ -25,6 +25,13 @@ import gradium
 import share
 
 VAD_PAUSE_PROB = 0.75  # inactivity_prob (0.5s horizon) above this = end of utterance
+# Coalesce rapid STT word updates into ONE partial rewrite: after being woken,
+# let the utterance settle for this long before spending an LLM call, instead of
+# re-translating on every single word. A detected pause (final) is never
+# debounced - it finalizes immediately. This is the real per-utterance latency
+# lever; the glossary is a static prompt prefix, so its size is a caching
+# concern, not a per-call one (see genz.py).
+PARTIAL_DEBOUNCE_S = 0.18
 
 app = fastapi.FastAPI(title="GenZ Live Transcript")
 
@@ -102,6 +109,16 @@ async def ws_translate(websocket: fastapi.WebSocket):
                         if finals:
                             text, final = finals.popleft(), True
                         else:
+                            # Let a burst of incoming words settle into a single
+                            # partial rewrite instead of one LLM call per word. A
+                            # pause (final) short-circuits the wait - finals are
+                            # never debounced.
+                            settled = 0.0
+                            while settled < PARTIAL_DEBOUNCE_S and not finals:
+                                await asyncio.sleep(0.03)
+                                settled += 0.03
+                            if finals:
+                                continue
                             text, final = " ".join(words).strip(), False
                             dirty = False
                         if len(text) < 3:

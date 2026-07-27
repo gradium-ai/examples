@@ -105,6 +105,26 @@
     {"term": "living my best life", "meaning": "thriving, enjoying life fully", "example": "Beach house all week — living my best life."},
     {"term": "understood the vibes", "meaning": "read the room correctly", "example": "He brought snacks unprompted. Understood the vibes."},
     {"term": "not me ___", "meaning": "self-aware callout of one's own behavior", "example": "Not me crying at a dog video again."},
-    {"term": "the way ___", "meaning": "emphasizing how something happened", "example": "The way I ran to the kitchen when I smelled pizza."}
+    {"term": "the way ___", "meaning": "emphasizing how something happened", "example": "The way I ran to the kitchen when I smelled pizza."},
+    {"term": "clock it / clocked", "meaning": "to notice, catch, or call out the truth of something", "example": "She said she's fine but she's been quiet all night. Clock it."},
+    {"term": "6-7 (six seven)", "meaning": "an absurd meme catchphrase used as a hype response; roughly 'so-so' or no real meaning", "example": "How was the test? Eh, 6-7."},
+    {"term": "standing on business", "meaning": "handling your responsibilities seriously, holding firm on what you said", "example": "He owned the mistake and fixed it. Standing on business."},
+    {"term": "chopped", "meaning": "ugly, unattractive, or low quality", "example": "That filter left him looking chopped."},
+    {"term": "huzz", "meaning": "a group of girls (playful, catch-all)", "example": "He was trying to impress the huzz all night."},
+    {"term": "gyat", "meaning": "exclamation of shock, usually at someone attractive", "example": "Gyat, did you see that fit?"},
+    {"term": "aura farming", "meaning": "doing things to look effortlessly cool and rack up 'aura'", "example": "He walked off without looking back - pure aura farming."},
+    {"term": "mewing", "meaning": "pressing your tongue to the roof of your mouth to sharpen your jaw; also staying silent to seem unbothered", "example": "They asked about the drama and I just kept mewing."},
+    {"term": "looksmaxxing", "meaning": "maxing out your looks through grooming, style, and fitness", "example": "New skincare and gym plan - full looksmaxxing arc."},
+    {"term": "skibidi", "meaning": "nonsense intensifier; can mean cool, bad, or chaotic depending on context", "example": "That edit was so skibidi."},
+    {"term": "clanker", "meaning": "a mocking term for a robot or AI", "example": "The chatbot glitched again, stupid clanker."},
+    {"term": "chat", "meaning": "the people around you, addressed like a livestream audience", "example": "Chat, is this real?"},
+    {"term": "unc", "meaning": "an older person who's out of touch (from 'uncle')", "example": "Bro said 'on fleek' - unc behavior."},
+    {"term": "rage bait", "meaning": "content made to provoke anger and drive engagement", "example": "Don't fall for it, that post is pure rage bait."},
+    {"term": "fanum tax", "meaning": "swiping a bit of a friend's food as a 'tax'", "example": "You look away for one second and he's fanum taxing your fries."},
+    {"term": "mogging", "meaning": "totally outshining someone, especially in looks", "example": "He walked in and started mogging everyone in the room."},
+    {"term": "pookie", "meaning": "affectionate nickname for someone you love", "example": "Wave to the camera, pookie."},
+    {"term": "ohio", "meaning": "weird, cursed, or absurd", "example": "That video was straight-up Ohio."},
+    {"term": "put the fries in the bag", "meaning": "stop talking or stop trying to impress; wrap it up", "example": "Nobody's buying it, bro, put the fries in the bag."},
+    {"term": "mustard", "meaning": "confidence, style, or flair", "example": "He pulled up to the party with straight mustard."}
   ]
 }
