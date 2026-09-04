@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gradium Live Avatar Agent"
+  short_description: "Build an extensible live avatar voice agent"
+  default_prompt: "Use $gradium-live-avatar-agent to build my minimal live avatar agent; ask for my reference image, validate my Gradium Voice Design prompt against it once if needed, then ask what the agent should do."

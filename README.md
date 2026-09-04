@@ -20,6 +20,15 @@ Each folder is self-contained: its own README, dependencies, and run instruction
 |---------|--------------|
 | **[genz-translator](genz-translator/)** | Speak normally and read your words rewritten into GenZ slang, live and karaoke-style. Gradium streaming STT → LLM rewrite → tokens streamed to the browser. |
 
+## Agent skills
+
+The [`skills`](skills/) directory contains reusable instructions for coding
+agents rather than standalone demo applications.
+
+| Skill | What it builds |
+|-------|----------------|
+| **[gradium-live-avatar-agent](skills/gradium-live-avatar-agent/)** | A minimal live avatar voice agent using Gradium Voice Design, STT, and TTS with LiveKit orchestration and a LemonSlice animated face. |
+
 ## Getting started
 
 Every example needs a Gradium API key:
@@ -40,4 +49,3 @@ uv run uvicorn app:app --port 8402
 ## License
 
 MIT
-</content>
