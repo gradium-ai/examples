@@ -30,6 +30,7 @@ the project in your workspace.
 | Skill | What it builds |
 |-------|----------------|
 | **[gradium-live-avatar-agent](skills/gradium-live-avatar-agent/)** | A minimal live avatar voice agent using Gradium Voice Design, STT, and TTS with LiveKit orchestration and a LemonSlice animated face. |
+| **[gradium-pruna-designed-avatar](skills/gradium-pruna-designed-avatar/)** | A reviewed, non-realtime talking-avatar video using a bespoke Gradium voice and Pruna `p-video-avatar`. |
 
 ### Gradium Live Avatar Agent
 
@@ -86,6 +87,55 @@ approval before promoting that voice and completing the agent.
 You need server-side Gradium and LemonSlice API keys plus LiveKit credentials.
 Configure them in the generated project's environment file or deployment secret
 store; never paste credentials into the prompt or expose them to browser code.
+
+### Gradium + Pruna Designed Avatar
+
+This skill creates a polished talking-avatar video from three creative inputs:
+
+1. A portrait image for the avatar.
+2. A description of the original voice to design and audition.
+3. The exact spoken script, or the clip's goal and audience if you want help
+   writing it.
+
+Gradium Voice Design creates the approved voice, Gradium TTS renders the final
+speech audio, and Pruna `p-video-avatar` animates the portrait from that audio.
+The skill checks the finished MP4 for duration, audio, speech accuracy, lip
+movement, face stability, framing, and visual artifacts. Unlike the LiveKit and
+LemonSlice skill above, this workflow renders a video asynchronously; it does
+not create a live or interruptible conversation.
+
+Install it for Codex:
+
+```bash
+mkdir -p ~/.codex/skills
+cp -R skills/gradium-pruna-designed-avatar ~/.codex/skills/
+```
+
+Or install it for Claude Code:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R skills/gradium-pruna-designed-avatar ~/.claude/skills/
+```
+
+Then provide the creative inputs in one prompt:
+
+```text
+Use $gradium-pruna-designed-avatar to create a talking-avatar video.
+
+Portrait: ./portrait.png
+Voice: A warm, softly textured voice with measured pacing and calm confidence.
+Language: English.
+Script: Welcome. In the next minute, I will walk you through the three ideas
+that matter most.
+```
+
+The skill creates one Gradium voice candidate, asks you to approve its audition,
+then promotes that voice and submits one Pruna render. Both operations can use
+paid credits, so it does not generate extra candidates or rerender without your
+approval. Configure `GRADIUM_API_KEY` and `PRUNA_API_KEY` in your environment or
+secret store; never put either key in a prompt, client-side bundle, or committed
+file.
 
 ## Getting started
 

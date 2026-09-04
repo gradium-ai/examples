@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gradium + Pruna Designed Avatar"
+  short_description: "Design a voice, then animate its portrait"
+  default_prompt: "Use $gradium-pruna-designed-avatar to create a talking-avatar video from my portrait, design and audition a fitting Gradium voice, then render and review it with Pruna."
