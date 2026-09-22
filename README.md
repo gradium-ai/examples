@@ -19,6 +19,7 @@ Each folder is self-contained: its own README, dependencies, and run instruction
 | Example | What it does |
 |---------|--------------|
 | **[genz-translator](genz-translator/)** | Speak normally and read your words rewritten into GenZ slang, live and karaoke-style. Gradium streaming STT → LLM rewrite → tokens streamed to the browser. |
+| **[tts-latency-race](tts-latency-race/)** | Race six streaming Text-to-Speech models from Gradium, ElevenLabs, Cartesia and Fish Audio on the same sentence, fired at the same instant. One waveform per model and time to first audio measured the way a listener hears it. |
 
 ## Agent skills
 
