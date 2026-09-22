@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TTS Latency Race</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <img class="logo" src="gradium-logo.svg" alt="Gradium" width="120" height="26">
+    <h1>TTS Latency Race</h1>
+  </header>
+  <p class="cap">One sentence, fired at every model at the same instant. The number is the time to first audio a
+    listener actually hears: the first chunk after the text goes out, plus the silence at the head of the stream.</p>
+
+  <form id="form" autocomplete="off">
+    <textarea id="text" rows="2" spellcheck="false"
+      placeholder="Type a sentence">Hi, I'm Gradium's newest model, and I'm the fastest text-to-speech we've ever built. Faster first audio, more natural conversations, no waiting. Try it today.</textarea>
+    <button class="go" id="go" type="submit">Go</button>
+  </form>
+
+  <div class="opts">
+    <label class="check"><input type="checkbox" id="breakdown"><span class="box"></span>show the leading silence</label>
+    <span class="legend" id="legend" hidden>
+      <span><i class="net"></i>network</span>
+      <span><i class="chunk"></i>first chunk</span>
+      <span><i class="sil"></i>leading silence</span>
+    </span>
+  </div>
+
+  <div class="race" id="race"></div>
+  <div class="ruler"><canvas id="ruler"></canvas></div>
+
+  <p class="foot" id="foot">The fastest lane is the one you hear. Click any lane to play it.</p>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
