@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-hot: var(--hot);
+  --color-off: var(--off);
+  --color-miss: var(--miss);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  color-scheme: light;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --background: oklch(0.985 0.001 106.4);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.54 0 0);
+  --border: oklch(0.922 0 0);
+  --hot: var(--mood);
+  --off: oklch(0.6 0.02 260);
+  --miss: oklch(0.72 0.15 70);
+  --danger: oklch(0.6 0.22 27);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--mood) 25%, transparent);
+  }
+}
+
+[data-mood] {
+  --mood: oklch(0.56 0.2 268);
+  --mood-ink: color-mix(in oklch, var(--mood) 72%, var(--foreground));
+}
+[data-mood="frustrated"] {
+  --mood: oklch(0.63 0.2 27);
+}
+[data-mood="neutral"] {
+  --mood: oklch(0.6 0.13 245);
+}
+[data-mood="enthusiastic"] {
+  --mood: oklch(0.7 0.16 150);
+}
+
+.mood-ring {
+  border-color: color-mix(in oklch, var(--mood) 70%, transparent);
+  box-shadow:
+    0 0 0 4px color-mix(in oklch, var(--mood) 10%, transparent),
+    0 16px 48px -16px color-mix(in oklch, var(--mood) 35%, transparent);
+  transition:
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.card {
+  @apply rounded-3xl border bg-card;
+}
+.card-off {
+  @apply rounded-3xl border border-dashed bg-card/60;
+}
+.eyebrow {
+  @apply font-mono text-[11px] tracking-wider text-muted-foreground uppercase;
+}
+.chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs;
+}
+.btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-full border bg-card px-3.5 py-1.5 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-primary {
+  @apply border-transparent bg-foreground text-background hover:bg-foreground/85;
+}
+.pressable {
+  transition: transform 160ms var(--ease-out);
+}
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Off-path spans are drawn hatched so they read as "not on the critical path". */
+.hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklch, var(--off) 55%, transparent) 0 4px,
+    color-mix(in oklch, var(--off) 25%, transparent) 4px 8px
+  );
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--mood) 45%, transparent); }
+  100% { box-shadow: 0 0 0 8px transparent; }
+}
+.pulsing {
+  animation: pulse-ring 1s var(--ease-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active:not(:disabled) { transform: none; }
+  .pulsing { animation: none; }
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
