@@ -64,10 +64,3 @@ export const REPLIES: Record<Language, Record<Tone, string>> = {
     enthusiastic: "Sehr gern geschehen! Es war mir eine Freude, und wir sind jederzeit für Sie da.",
   },
 };
-
-// Candidates only accept 100 characters of text.
-export const AUDITION: Record<Language, (n: number) => string> = {
-  en: (n) => `Test voice for candidate ${n}.`,
-  fr: (n) => `Voix de test pour le candidat ${n}.`,
-  de: (n) => `Teststimme für Kandidat ${n}.`,
-};

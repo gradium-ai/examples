@@ -53,7 +53,7 @@ export function PipelineStrip({ classify, computed, speech, queue, librarySize }
 
   const off: { label: string; value: string; state: NodeState }[] = [
     { label: "Design queue", value: `${waiting} waiting`, state: waiting ? "miss" : "idle" },
-    { label: "Voice Design", value: designing ? `${designing} running` : "generate, audition, convert", state: designing ? "active" : "idle" },
+    { label: "Voice Design", value: designing ? `${designing} running` : "generate, save", state: designing ? "active" : "idle" },
     { label: "Library", value: `${librarySize} approved`, state: librarySize ? "done" : "idle" },
   ];
 

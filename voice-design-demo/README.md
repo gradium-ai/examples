@@ -9,15 +9,14 @@ casual), and watch each step of a turn:
    request. Answers below 0.6 confidence fall back to the defaults (neutral,
    relaxed).
 2. **Map**: PERSONA and DELIVERY turn the spec into a Voice Design prompt.
-3. **Resolve**: `resolveVoice` picks an exact match from the library, or the
-   nearest approved voice in the same language. Every miss is queued for Voice
-   Design. If no voice is approved for the language yet, a Gradium flagship
-   voice stands in.
-4. **Speak**: an ordinary Gradium TTS request with the resolved `voice_id`.
+3. **Speak**: click **Generate speech**. The demo reuses an exact matching voice
+   from your library, or generates a voice, waits until it is ready, and saves it
+   automatically before speaking with Gradium TTS. Creating a new voice uses one
+   custom-voice slot. There is no audition or selection step.
 
-Off the hot path, the design queue runs generate, waitUntilReady, audition and
-convert (see the [Voice Design guide](https://docs.gradium.ai/guides/voices/voice-design)). The trace panel records every request with browser and upstream
-timings, split into critical-path and off-path lanes.
+The trace panel shows the requests and their timings. See the
+[Voice Design guide](https://docs.gradium.ai/guides/voices/voice-design)
+for details on generating and saving voices.
 
 ## Run locally
 
@@ -33,7 +32,7 @@ in.
 
 ## Docs
 
-- [Voice Design guide](https://docs.gradium.ai/guides/voices/voice-design): create a voice from a description, audition it, and convert it.
+- [Voice Design guide](https://docs.gradium.ai/guides/voices/voice-design): create a voice from a description and save it to your library.
 - [Gradium API reference](https://docs.gradium.ai/api-reference/introduction): TTS, Voices and Voice Design endpoints.
 
 ## Layout

@@ -6,7 +6,7 @@ import { EASE_OUT } from "@/lib/motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useKeys } from "@/hooks/use-keys";
 import { EXAMPLES } from "@/lib/content";
-import { useClassify, useDesignQueue, useLibrary, useSpeak } from "@/hooks/use-pipeline";
+import { useClassify, useLibrary, useVoiceSpeech } from "@/hooks/use-pipeline";
 import { specKey } from "@/lib/pipeline/resolve";
 import { mapAndResolve } from "@/lib/pipeline/turn";
 import type { Energy, Language, Register, Tone, VoiceSpec } from "@/lib/pipeline/types";
@@ -15,7 +15,6 @@ import { ComposerCard } from "./composer-card";
 import { KeysDialog } from "./keys-dialog";
 import { LatencyHud } from "./latency-hud";
 import { PromptCard } from "./prompt-card";
-import { ResolverCard } from "./resolver-card";
 import { SpeakCard } from "./speak-card";
 import { TracePanel } from "./trace-panel";
 
@@ -31,8 +30,7 @@ export function Demo() {
 
   const classify = useClassify(text, language, register, k.headers);
   const lib = useLibrary(k.headers, k.hasGradium);
-  const queue = useDesignQueue(k.headers, lib.refresh);
-  const speech = useSpeak(k.headers);
+  const speech = useVoiceSpeech(k.headers, lib.refresh);
   const result = classify.result;
 
   // A new message clears manual overrides.
@@ -59,9 +57,8 @@ export function Demo() {
     [key, lib.library],
   );
 
-  // Record map + resolve on the turn that produced them, and enqueue misses (voiceForTurn).
+  // Record mapping and the library lookup for this turn.
   const resolvedFor = useRef<string | null>(null);
-  const { enqueue } = queue;
   useEffect(() => {
     if (!computed || !result) return;
     const fresh = resolvedFor.current !== result.traceId;
@@ -75,14 +72,10 @@ export function Demo() {
       start: t0 + mapMs,
       end: t0 + mapMs + resolveMs,
       status: resolution.exact ? "ok" : "miss",
-      detail: resolution.exact ? "exact match" : resolution.stock ? "no approved voice, stock fallback" : `nearest, distance ${resolution.distance}`,
+      detail: resolution.exact ? "exact match" : resolution.stock ? "voice will be generated when Speak is clicked" : `nearest, distance ${resolution.distance}`,
     });
-    if (!resolution.exact) {
-      const at = t0 + mapMs + resolveMs;
-      trace.record({ name: "enqueue for Voice Design (not awaited)", lane: "off", start: at, end: at, status: "ok", detail: specKey(computed.spec) });
-      enqueue(computed.spec);
-    }
-  }, [computed, result, enqueue]);
+
+  }, [computed, result]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -125,20 +118,7 @@ export function Demo() {
               </Reveal>
             )}
             {computed && (
-              <Reveal key="resolve" step={2}>
-                <ResolverCard
-                  spec={computed.spec}
-                  resolution={computed.resolution}
-                  library={lib.library}
-                  queue={queue}
-                  libraryState={lib}
-                  hasGradium={k.hasGradium}
-                  onOpenKeys={() => setKeysOpen(true)}
-                />
-              </Reveal>
-            )}
-            {computed && (
-              <Reveal key="speak" step={3}>
+              <Reveal key="speak" step={2}>
                 <SpeakCard spec={computed.spec} resolution={computed.resolution} speech={speech} hasGradium={k.hasGradium} />
               </Reveal>
             )}

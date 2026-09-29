@@ -28,7 +28,7 @@ async function call(key: string, method: string, path: string, body?: unknown) {
 }
 
 // Article: generateCandidates
-export async function generateCandidates(key: string, spec: VoiceSpec, n = 3) {
+export async function generateCandidates(key: string, spec: VoiceSpec, n = 1) {
   const { json, upstream } = await call(key, "POST", "/voice-generator/generate", {
     prompt: voicePrompt(spec),
     language: spec.language,

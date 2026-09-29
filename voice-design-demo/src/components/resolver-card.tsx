@@ -6,7 +6,7 @@ import type { useDesignQueue } from "@/hooks/use-pipeline";
 import { ENERGIES, REGISTERS, TONES } from "@/lib/pipeline/questions";
 import { distance, specKey, type Resolution } from "@/lib/pipeline/resolve";
 import type { LibraryEntry, VoiceSpec } from "@/lib/pipeline/types";
-import { CandidatePicker } from "./candidate-picker";
+import { DesignedVoice } from "./designed-voice";
 import { StepLabel } from "./composer-card";
 
 type Props = {
@@ -83,7 +83,7 @@ export function ResolverCard({ spec, resolution, library, queue, libraryState, h
                               className={`group absolute inset-0 grid place-items-center rounded-lg px-1 font-mono text-[10px] leading-tight text-miss hover:bg-miss/10 focus-visible:bg-miss/10 ${picking === key ? "bg-miss/10" : ""}`}
                             >
                               <span className="group-hover:hidden group-focus-visible:hidden">{q}</span>
-                              <span className="hidden text-center group-hover:block group-focus-visible:block">Audition 3 candidates</span>
+                              <span className="hidden text-center group-hover:block group-focus-visible:block">Design voice</span>
                             </button>
                           ) : null}
                         </div>
@@ -96,12 +96,12 @@ export function ResolverCard({ spec, resolution, library, queue, libraryState, h
           </table>
         </div>
         <p className="text-xs text-muted-foreground">
-          Hover a queued cell to audition 3 candidates; approving one adds it to the library, and the next matching message resolves to it.
+          Click a queued cell to design a voice, then save it to your library for the next matching message.
         </p>
 
         {libraryState.error && <p className="text-sm text-danger">{libraryState.error}</p>}
       </div>
-      {pickItem && <CandidatePicker item={pickItem} queue={queue} onClose={() => setPicking(null)} />}
+      {pickItem && <DesignedVoice item={pickItem} queue={queue} onClose={() => setPicking(null)} />}
     </section>
   );
 }

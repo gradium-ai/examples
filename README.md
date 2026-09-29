@@ -20,7 +20,7 @@ Each folder is self-contained: its own README, dependencies, and run instruction
 |---------|--------------|
 | **[genz-translator](genz-translator/)** | Speak normally and read your words rewritten into GenZ slang, live and karaoke-style. Gradium streaming STT → LLM rewrite → tokens streamed to the browser. |
 | **[tts-latency-race](tts-latency-race/)** | Race six streaming Text-to-Speech models from Gradium, ElevenLabs, Cartesia and Fish Audio on the same sentence, fired at the same instant. One waveform per model and time to first audio measured the way a listener hears it. |
-| **[voice-design-demo](voice-design-demo/)** | Give a voice agent a voice that adapts to context. Jev reads tone and energy from a customer message, the app picks or designs a matching voice with Gradium Voice Design, then speaks the reply with Gradium TTS. A trace panel shows every request and its latency. [Live demo](https://voice-design-demo.thomassegura.workers.dev). |
+| **[voice-design-demo](voice-design-demo/)** | Give a voice agent a voice that adapts to context. Jev reads tone and energy from a customer message, the app reuses an exact matching voice or generates and saves one automatically, then speaks the reply with Gradium TTS. A trace panel shows every request and its latency. [Live demo](https://voice-design-demo.thomassegura.workers.dev). |
 
 ## Agent skills
 

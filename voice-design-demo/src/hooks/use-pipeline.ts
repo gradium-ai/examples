@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AUDITION } from "@/lib/content";
 import type { ClassifyResult, Language, LibraryEntry, Register, UpstreamCall, VoiceSpec } from "@/lib/pipeline/types";
 import { specKey } from "@/lib/pipeline/resolve";
 import { beginTrace, handleFor, type TraceHandle } from "@/lib/trace";
@@ -158,12 +157,11 @@ export function useSpeak(headers: Headers) {
 }
 
 export type DesignStatus = "queued" | "generating" | "waiting" | "ready" | "converting" | "approved" | "error";
-export type DesignCandidate = { id: string; ready: boolean; audio?: string; auditioning?: boolean };
 export type DesignItem = {
   key: string;
   spec: VoiceSpec;
   status: DesignStatus;
-  candidates: DesignCandidate[];
+  candidateId?: string;
   polls: number;
   error?: string;
   voiceId?: string;
@@ -173,9 +171,8 @@ export type DesignItem = {
 
 const POLL_MS = 500;
 const TIMEOUT_MS = 120_000;
-const N_SAMPLES = 3;
 
-// The dotted path of the article: generate, wait, audition, convert. Nothing here
+// The dotted path of the article: generate, wait, convert. Nothing here
 // is awaited by the conversation; the resolver keeps answering from the library.
 export function useDesignQueue(headers: Headers, onApproved: () => void) {
   const [items, setItems] = useState<DesignItem[]>([]);
@@ -185,7 +182,7 @@ export function useDesignQueue(headers: Headers, onApproved: () => void) {
 
   const enqueue = useCallback((spec: VoiceSpec) => {
     const key = specKey(spec);
-    setItems((all) => (all.some((i) => i.key === key) ? all : [{ key, spec, status: "queued", candidates: [], polls: 0 }, ...all]));
+    setItems((all) => (all.some((i) => i.key === key) ? all : [{ key, spec, status: "queued", candidateId: undefined, polls: 0 }, ...all]));
   }, []);
 
   const dismiss = useCallback((key: string) => setItems((all) => all.filter((i) => i.key !== key)), []);
@@ -193,47 +190,42 @@ export function useDesignQueue(headers: Headers, onApproved: () => void) {
   const generate = useCallback(
     async (key: string) => {
       const trace = beginTrace("design", `design ${key}`);
-      patch(key, () => ({ status: "generating", error: undefined, candidates: [], polls: 0, traceId: trace.id }));
-      const span = trace.span("generate candidates", "off");
+      patch(key, () => ({ status: "generating", error: undefined, candidateId: undefined, polls: 0, traceId: trace.id }));
+      const span = trace.span("generate voice", "off");
       const { res, json, clientMs, started } = await api<{ ids: string[] }>("/api/design/generate", headers, {
         method: "POST",
-        body: JSON.stringify({ key, n: N_SAMPLES }),
+        body: JSON.stringify({ key }),
       });
       if (!res.ok) {
         span.end({ status: "error", detail: json?.error, upstream: json?.upstream });
         return patch(key, () => ({ status: "error", error: json?.error }));
       }
-      span.end({ detail: `${json.ids.length} candidates` });
+      const candidateId = json.ids?.[0];
+      if (!candidateId) {
+        span.end({ status: "error", detail: "No voice returned" });
+        return patch(key, () => ({ status: "error", error: "No voice returned. Please retry." }));
+      }
+      span.end({ detail: "Voice generated" });
       if (json.upstream) recordUpstream(trace, "Gradium POST /voice-generator/generate", started, clientMs, json.upstream, "off");
-      patch(key, () => ({ status: "waiting", candidates: json.ids.map((id) => ({ id, ready: false })) }));
+      patch(key, () => ({ status: "waiting", candidateId }));
 
-      // waitUntilReady from the article, run for every candidate at once.
       const wait = trace.span("wait until ready", "off");
       const waitStart = performance.now();
-      const pendingIds = new Set(json.ids);
+      let ready = false;
       let polls = 0;
       let last: UpstreamCall | undefined;
-      while (pendingIds.size && performance.now() - waitStart < TIMEOUT_MS) {
+      while (!ready && performance.now() - waitStart < TIMEOUT_MS) {
         await new Promise((r) => setTimeout(r, POLL_MS));
-        const results = await Promise.all(
-          [...pendingIds].map(async (id) => {
-            const r = await api<{ ready: boolean }>(`/api/design/status?id=${encodeURIComponent(id)}`, headers);
-            last = r.json?.upstream ?? last;
-            return { id, ready: Boolean(r.res.ok && r.json.ready) };
-          }),
-        );
+        const result = await api<{ ready: boolean }>(`/api/design/status?id=${encodeURIComponent(candidateId)}`, headers);
+        last = result.json?.upstream ?? last;
+        ready = Boolean(result.res.ok && result.json?.ready);
         polls += 1;
-        for (const { id, ready } of results) {
-          if (!ready) continue;
-          pendingIds.delete(id);
-          handleFor(trace.id).record({ name: `candidate ${json.ids.indexOf(id) + 1} ready`, lane: "off", child: true, start: waitStart, end: performance.now(), status: "ok", detail: id });
-        }
-        patch(key, (i) => ({ polls, candidates: i.candidates.map((c) => ({ ...c, ready: !pendingIds.has(c.id) })) }));
+        patch(key, () => ({ polls }));
       }
       const waitedMs = performance.now() - waitStart;
-      if (pendingIds.size) {
+      if (!ready) {
         wait.end({ status: "error", detail: `timed out after ${polls} polls`, upstream: last });
-        return patch(key, () => ({ status: "error", error: "Candidates not ready after 2 minutes", waitedMs }));
+        return patch(key, () => ({ status: "error", error: "Voice not ready after 2 minutes", waitedMs }));
       }
       wait.end({ detail: `${polls} polls every ${POLL_MS}ms`, upstream: last });
       patch(key, () => ({ status: "ready", waitedMs }));
@@ -241,29 +233,12 @@ export function useDesignQueue(headers: Headers, onApproved: () => void) {
     [headers, patch],
   );
 
-  const audition = useCallback(
-    async (item: DesignItem, candidateId: string) => {
-      const trace = handleFor(item.traceId ?? beginTrace("design", `design ${item.key}`).id);
-      patch(item.key, (i) => ({ candidates: i.candidates.map((c) => (c.id === candidateId ? { ...c, auditioning: true } : c)) }));
-      const span = trace.span(`audition ${candidateId.slice(-6)}`, "off");
-      const res = await fetch("/api/speak", { method: "POST", headers, body: JSON.stringify({ text: AUDITION[item.spec.language](item.candidates.findIndex((c) => c.id === candidateId) + 1), voiceId: candidateId }) });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        span.end({ status: "error", detail: json.error, upstream: json.upstream });
-        return patch(item.key, (i) => ({ error: json.error, candidates: i.candidates.map((c) => (c.id === candidateId ? { ...c, auditioning: false } : c)) }));
-      }
-      const url = URL.createObjectURL(await res.blob());
-      span.end({ detail: `TTS first byte ${res.headers.get("x-upstream-ttfb-ms")}ms` });
-      patch(item.key, (i) => ({ candidates: i.candidates.map((c) => (c.id === candidateId ? { ...c, auditioning: false, audio: url } : c)) }));
-      new Audio(url).play().catch(() => {});
-    },
-    [headers, patch],
-  );
-
   const convert = useCallback(
-    async (item: DesignItem, candidateId: string) => {
+    async (item: DesignItem) => {
+      const candidateId = item.candidateId;
+      if (!candidateId || item.status !== "ready") return;
       const trace = handleFor(item.traceId ?? beginTrace("design", `design ${item.key}`).id);
-      patch(item.key, () => ({ status: "converting" }));
+      patch(item.key, () => ({ status: "converting", error: undefined }));
       const span = trace.span("convert to voice_id", "off");
       const { res, json, clientMs, started } = await api<{ uid: string }>("/api/design/convert", headers, {
         method: "POST",
@@ -281,5 +256,72 @@ export function useDesignQueue(headers: Headers, onApproved: () => void) {
     [headers, patch, onApproved],
   );
 
-  return { items, enqueue, dismiss, generate, audition, convert };
+  return { items, enqueue, dismiss, generate, convert };
+}
+
+// Generate and save a matching voice as part of the explicit Speak action.
+export function useVoiceSpeech(headers: Headers, onSaved: () => void) {
+  const speech = useSpeak(headers);
+  const [phase, setPhase] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
+  const running = useRef(false);
+  const saved = useRef(new Map<string, string>());
+  useEffect(() => { saved.current.clear(); }, [headers]);
+
+  const generateAndSpeak = async (text: string, spec: VoiceSpec, exactVoiceId?: string) => {
+    if (running.current) return;
+    running.current = true;
+    setError(undefined);
+    const key = specKey(spec);
+    try {
+      let voiceId = exactVoiceId ?? saved.current.get(key);
+      if (!voiceId) {
+        const trace = beginTrace("design", `design ${key}`);
+        const request = async <T,>(path: string, init?: RequestInit) => {
+          const span = trace.span(path, "hot");
+          try {
+            const result = await api<T>(path, headers, init);
+            if (!result.res.ok) throw new Error(result.json?.error ?? `HTTP ${result.res.status}`);
+            span.end({ upstream: result.json?.upstream });
+            return result.json;
+          } catch (err) {
+            span.end({ status: "error", detail: err instanceof Error ? err.message : "Request failed" });
+            throw err;
+          }
+        };
+        setPhase("Generating voice");
+        const generated = await request<{ ids: string[] }>("/api/design/generate", {
+          method: "POST", body: JSON.stringify({ key }),
+        });
+        const candidateId = generated.ids?.[0];
+        if (!candidateId) throw new Error("No voice returned. Please try again.");
+        setPhase("Preparing voice");
+        const started = performance.now();
+        let ready = false;
+        while (!ready && performance.now() - started < TIMEOUT_MS) {
+          await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+          const status = await request<{ ready: boolean }>(`/api/design/status?id=${encodeURIComponent(candidateId)}`);
+          ready = status.ready;
+        }
+        if (!ready) throw new Error("Voice not ready after 2 minutes. Please try again.");
+        setPhase("Saving voice");
+        const converted = await request<{ uid: string }>("/api/design/convert", {
+          method: "POST", body: JSON.stringify({ key, candidateId }),
+        });
+        voiceId = converted.uid;
+        if (!voiceId) throw new Error("Could not save the voice. Please try again.");
+        saved.current.set(key, voiceId);
+        onSaved();
+      }
+      setPhase("Generating speech");
+      await speech.speak(text, voiceId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Speech generation failed. Please try again.");
+    } finally {
+      running.current = false;
+      setPhase(null);
+    }
+  };
+
+  return { ...speech, pending: speech.pending || phase !== null, error: error ?? speech.error, phase, generateAndSpeak };
 }
