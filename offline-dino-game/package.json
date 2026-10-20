@@ -1,0 +1,22 @@
+{
+  "name": "offline-dino-game",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite build && vite preview"
+  },
+  "dependencies": {
+    "@tabler/icons-svelte": "^3.49.0",
+    "phonon-tts": "0.4.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "svelte": "^5.57.2",
+    "tailwindcss": "^4.3.3",
+    "vite": "^7.3.6"
+  }
+}
