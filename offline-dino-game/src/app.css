@@ -1,0 +1,466 @@
+/* The page's styles: Tailwind, plus what the studio's Phonon page (gradium-ai/studio) needs for
+   its cabinet, copied from src/routes/layout.css and src/lib/styles/tokens.css there. */
+@import "tailwindcss";
+
+/* IBM Plex Mono (SIL OFL), the cabinet's face. */
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-Regular-Latin1.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+		U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A,
+		U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02;
+}
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-Medium-Latin1.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+		U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A,
+		U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02;
+}
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-SemiBold-Latin1.woff2') format('woff2');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+		U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A,
+		U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02;
+}
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-Regular-Latin2.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0100-0101, U+0104-0130, U+0132-0151, U+0154-017F, U+018F, U+0192,
+		U+01A0-01A1, U+01AF-01B0, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+1E80-1E85,
+		U+1E9E, U+20A1, U+20A4, U+20A6, U+20A8-20AA, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+		U+20B8-20BA, U+20BD, U+20BF;
+}
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-Medium-Latin2.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0100-0101, U+0104-0130, U+0132-0151, U+0154-017F, U+018F, U+0192,
+		U+01A0-01A1, U+01AF-01B0, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+1E80-1E85,
+		U+1E9E, U+20A1, U+20A4, U+20A6, U+20A8-20AA, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+		U+20B8-20BA, U+20BD, U+20BF;
+}
+@font-face {
+	font-family: 'IBM Plex Mono Webfont';
+	src: url('./fonts/IBMPlexMono-SemiBold-Latin2.woff2') format('woff2');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0100-0101, U+0104-0130, U+0132-0151, U+0154-017F, U+018F, U+0192,
+		U+01A0-01A1, U+01AF-01B0, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+1E80-1E85,
+		U+1E9E, U+20A1, U+20A4, U+20A6, U+20A8-20AA, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+		U+20B8-20BA, U+20BD, U+20BF;
+}
+
+/* Komuna, Gradium's dot-matrix display face, for the marquee and the screen's titles. */
+@font-face {
+	font-family: 'Komuna';
+	src: url('./fonts/Komuna-Variable.woff2') format('woff2');
+	font-weight: 100 1000;
+	font-style: normal;
+	font-display: swap;
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+		U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+		U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* `short:`: a window too short for the cabinet laid out whole; it tightens instead of scrolling. */
+@custom-variant short (@media (max-height: 860px));
+
+@theme {
+	--font-mono: 'IBM Plex Mono Webfont', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--font-mono--font-feature-settings: 'zero';
+	--font-komuna: 'Komuna', ui-sans-serif, system-ui, sans-serif;
+	--animate-arcade-blink: arcade-blink 1s steps(1, end) infinite;
+	--animate-arcade-pop: arcade-pop 0.45s steps(4, end) both;
+	--animate-arcade-rainbow: arcade-rainbow 1.2s linear infinite;
+	--animate-arcade-sweep: arcade-sweep 8s linear infinite;
+	--animate-arcade-flash: arcade-flash 0.35s steps(3, end) both;
+	--animate-arcade-pulse: arcade-pulse 1.5s steps(6, end) infinite;
+	--animate-arcade-chase: arcade-chase 7s linear infinite;
+	--animate-arcade-tilt: arcade-tilt 0.5s steps(10, end) 2;
+}
+
+:root {
+	/* Phonon — the on-device page's own identity, from the website's
+	   `data-identity="phonon"` block: Gradium, deprived of colour and
+	   fidelity. One ground, one ink, one neon. Declared here only, not under
+	   [data-theme='dark']: the page is black in both themes on purpose. */
+	--phonon-bg: #000000;
+	--phonon-surface: #0b0b0b;
+	--phonon-line: #262626;
+	--phonon-ink: #f2f2f2;
+	--phonon-ink-muted: #8a8a8a;
+	--phonon-accent: #daff52;
+	--phonon-accent-pale: #aed2ff;
+	--phonon-accent-deep: #111111;
+	/* The game's arcade screens: the one place Phonon allows colour, kept to a
+	   sunset ramp for the titles, a heart red, and a cyan and a pink for the
+	   cabinet's chrome. */
+	/* Every colour the arcade wears is from the brand book: lime #daff52,
+	   peach #ffb592, pink #ff95e5, light blue #aed2ff, cyan #91fffa (and the
+	   book's blue #1ca0ff, purple #d895ff, green #60e21a, unused so far). The
+	   names below are their roles, kept from before the palette was pinned. */
+	--phonon-arcade-sun: #ffb592;
+	--phonon-arcade-ember: #ffb592;
+	--phonon-arcade-blaze: #ff95e5;
+	--phonon-arcade-heart: #ff95e5;
+	--phonon-arcade-pink: #ff95e5;
+	--phonon-arcade-cyan: #91fffa;
+	--phonon-arcade-night: #0b0b0b;
+	/* The arcade version's cabinet and room (`/on-device/arcade`), flat-shaded
+	   like a flat game: one solid grey per face. Black, white and the halftone
+	   between them, with light touches of three of the colours above, all on
+	   the yellow-lime side: `--phonon-accent` first (PRESS START, the lit
+	   buttons), `--phonon-arcade-sun` and `--phonon-accent-pale` after it.
+	   `--phonon-face` is a surface facing up (the deck), lit from above. */
+	--phonon-cabinet: #0e0e0e;
+	--phonon-bezel: #181818;
+	--phonon-bezel-edge: #2f2f2f;
+	--phonon-face: #222222;
+	/* A key at rest, standing up off the deck: grey, a step lighter than the
+	   deck so its lip shows. Pressed, a key turns lime and sinks. */
+	--phonon-key: #3a3a3a;
+	/* The cabinet's side panels and roof, as the room prints them: opaque,
+	   flat-shaded like the front, one grey per face. A side panel runs from
+	   `--phonon-side` at the back to `--phonon-side-lit` at its front edge (the
+	   right one a shade darker, away from the light); the roof's underside is
+	   the darkest face, its front edge the lightest of the top. */
+	--phonon-side: #131313;
+	--phonon-side-lit: #232323;
+	--phonon-roof: #0b0b0b;
+	--phonon-roof-front: #1d1d1d;
+	/* The side boards' front edges, facing the player: the lightest grey of
+	   the frame, so it reads as a solid board round the cabinet. */
+	--phonon-board-edge: #2a2a2a;
+	/* Brushed metal, for the maker's plaque and its screws: a light and a dark
+	   grey for the brush and the bevel, and the ink an engraving cuts into it. */
+	--phonon-metal: #8f8f8f;
+	--phonon-metal-light: #cfcfcf;
+	--phonon-metal-dark: #555555;
+	--phonon-metal-ink: #2b2b2b;
+	--phonon-screen: #030303;
+	/* The halftone grille's dots at rest: there to be seen, under the voice. */
+	--phonon-grille: #3d3d3d;
+	/* The room round the cabinet, printed in black and white: the machines'
+	   ASCII and the room's lines in three greys where the cabinet wears its
+	   colours, so the colour on the page is the cabinet's alone. */
+	--phonon-room-light: #d4d4d4;
+	--phonon-room-mid: #9e9e9e;
+	--phonon-room-dim: #6b6b6b;
+}
+
+html, body { margin: 0; background: var(--phonon-bg); color-scheme: dark; }
+
+@keyframes arcade-blink {
+	0% {
+		opacity: 1;
+	}
+	70% {
+		opacity: 0;
+	}
+}
+@keyframes arcade-pop {
+	0% {
+		transform: scale(2.2);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+@keyframes arcade-rainbow {
+	to {
+		filter: hue-rotate(360deg);
+	}
+}
+@keyframes arcade-sweep {
+	from {
+		transform: translateY(-100%);
+	}
+	to {
+		transform: translateY(100%);
+	}
+}
+@keyframes arcade-pulse {
+	0% {
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--phonon-accent) 75%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 0.9rem color-mix(in srgb, var(--phonon-accent) 0%, transparent);
+	}
+}
+@keyframes arcade-chase {
+	from {
+		stroke-dashoffset: 100;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+@keyframes arcade-tilt {
+	0%,
+	100% {
+		transform: translate(0, 0) rotate(0);
+	}
+	20% {
+		transform: translate(-6px, 2px) rotate(-0.6deg);
+	}
+	40% {
+		transform: translate(5px, -3px) rotate(0.5deg);
+	}
+	60% {
+		transform: translate(-4px, 3px) rotate(-0.4deg);
+	}
+	80% {
+		transform: translate(3px, -1px) rotate(0.3deg);
+	}
+}
+@keyframes arcade-flash {
+	0% {
+		opacity: 0.1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@utility text-caption {
+	font-size: 0.75rem; /* 12px */
+	line-height: 1.4;
+}
+@utility arcade-scanlines {
+	background-image: repeating-linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--phonon-bg) 20%, transparent) 0 1px,
+		transparent 1px 3px
+	);
+}
+@utility arcade-inlay {
+	box-shadow:
+		inset 0 1px 2px var(--phonon-bg),
+		0 1px 0 color-mix(in srgb, var(--phonon-ink) 7%, transparent);
+}
+@utility arcade-engraved {
+	text-shadow:
+		0 -1px 0 var(--phonon-bg),
+		0 1px 0 color-mix(in srgb, var(--phonon-ink) 8%, transparent);
+}
+@utility arcade-plaque {
+	border-radius: 3px;
+	color: var(--phonon-metal-ink);
+	background-color: var(--phonon-metal);
+	background-image:
+		linear-gradient(
+			105deg,
+			transparent 40%,
+			color-mix(in srgb, var(--phonon-ink) 65%, transparent) 50%,
+			transparent 60%
+		),
+		repeating-linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--phonon-metal-light) 28%, transparent) 0 1px,
+			transparent 1px 2px,
+			color-mix(in srgb, var(--phonon-metal-dark) 14%, transparent) 2px 3px
+		),
+		linear-gradient(to bottom, var(--phonon-metal-light), var(--phonon-metal) 45%, var(--phonon-metal-dark));
+	background-size: 280% 100%, auto, auto;
+	background-position: calc(50% - var(--glint-x, 0) * 0.35%) 0, 0 0, 0 0;
+	box-shadow:
+		inset 0 1px 0 color-mix(in srgb, var(--phonon-ink) 60%, transparent),
+		inset 0 -1px 0 color-mix(in srgb, var(--phonon-bg) 45%, transparent),
+		0 2px 3px color-mix(in srgb, var(--phonon-bg) 70%, transparent);
+}
+@utility arcade-etched {
+	text-shadow:
+		0 1px 0 color-mix(in srgb, var(--phonon-ink) 55%, transparent),
+		0 -1px 0 color-mix(in srgb, var(--phonon-bg) 30%, transparent);
+}
+@utility arcade-screw {
+	position: absolute;
+	width: 0.4375rem;
+	height: 0.4375rem;
+	border-radius: 9999px;
+	background: radial-gradient(circle at 35% 30%, var(--phonon-metal-light), var(--phonon-metal-dark) 75%);
+	box-shadow:
+		0 1px 0 color-mix(in srgb, var(--phonon-ink) 35%, transparent),
+		inset 0 -1px 1px color-mix(in srgb, var(--phonon-bg) 45%, transparent);
+	&::after {
+		content: '';
+		position: absolute;
+		inset-inline: 15%;
+		top: 50%;
+		height: 1px;
+		translate: 0 -50%;
+		rotate: var(--turn, 35deg);
+		background-color: var(--phonon-metal-ink);
+	}
+}
+@utility arcade-fader {
+	transform-style: preserve-3d;
+	& [data-slot='slider-track'] {
+		height: 0.375rem;
+		border-radius: 9999px;
+		background-color: var(--phonon-bg);
+		box-shadow:
+			inset 0 1px 2px var(--phonon-bg),
+			0 1px 0 color-mix(in srgb, var(--phonon-ink) 7%, transparent);
+	}
+	& [data-slot='slider-range'] {
+		background-color: color-mix(in srgb, var(--phonon-accent) 80%, var(--phonon-bg));
+	}
+	/* The thumb is only the cap's footprint on the deck: the cap is a box of
+	   faces the page draws into it (`data-face`), `--cap-h` tall, and a soft
+	   shadow it casts on the deck. Light from above and to the left: the top
+	   face brightest toward the player, the left side lighter than the right. */
+	& [data-slot='slider-thumb'] {
+		--cap-h: 0.85rem;
+		width: 0.875rem;
+		height: 1.5rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		transform-style: preserve-3d;
+	}
+	& [data-face] {
+		position: absolute;
+	}
+	& [data-face='cap-shadow'] {
+		inset: 25% -0.2rem -0.35rem;
+		border-radius: 0.2rem;
+		background-color: var(--phonon-bg);
+		opacity: 0.6;
+		filter: blur(3px);
+	}
+	& [data-face='cap-top'] {
+		inset: 0;
+		border-radius: 2px;
+		transform: translateZ(var(--cap-h));
+		background-color: var(--phonon-key);
+		background-image:
+			linear-gradient(
+				to right,
+				transparent calc(50% - 0.5px),
+				var(--phonon-ink) calc(50% - 0.5px) calc(50% + 0.5px),
+				transparent calc(50% + 0.5px)
+			),
+			repeating-linear-gradient(
+				to bottom,
+				transparent 0 3px,
+				color-mix(in srgb, var(--phonon-bg) 40%, transparent) 3px 4px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--phonon-bg) 25%, transparent),
+				color-mix(in srgb, var(--phonon-ink) 12%, transparent)
+			);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--phonon-ink) 25%, transparent),
+			inset 0 -1px 0 color-mix(in srgb, var(--phonon-ink) 18%, transparent);
+	}
+	& [data-face='cap-front'] {
+		inset-inline: 0;
+		top: 100%;
+		height: var(--cap-h);
+		transform-origin: top;
+		transform: rotateX(90deg);
+		background-image: linear-gradient(
+			to top,
+			var(--phonon-bezel-edge),
+			color-mix(in srgb, var(--phonon-bezel-edge) 55%, var(--phonon-bg))
+		);
+	}
+	& [data-face='cap-left'],
+	& [data-face='cap-right'] {
+		inset-block: 0;
+		width: var(--cap-h);
+	}
+	& [data-face='cap-left'] {
+		left: 0;
+		transform-origin: left;
+		transform: rotateY(-90deg);
+		background-color: var(--phonon-face);
+	}
+	& [data-face='cap-right'] {
+		right: 0;
+		transform-origin: right;
+		transform: rotateY(90deg);
+		background-color: color-mix(in srgb, var(--phonon-face) 55%, var(--phonon-bg));
+	}
+	& [data-slot='slider-thumb']:focus-visible {
+		outline: 2px solid var(--phonon-accent);
+		outline-offset: 2px;
+	}
+}
+@utility arcade-glass {
+	background-image:
+		radial-gradient(
+			130% 100% at 50% 50%,
+			transparent 58%,
+			color-mix(in srgb, var(--phonon-bg) 80%, transparent) 100%
+		),
+		linear-gradient(
+			165deg,
+			color-mix(in srgb, var(--phonon-ink) 7%, transparent) 0%,
+			transparent 24%
+		);
+	box-shadow:
+		inset 0 0 5rem color-mix(in srgb, var(--phonon-bg) 85%, transparent),
+		inset 0 0 0.75rem color-mix(in srgb, var(--phonon-bg) 90%, transparent);
+}
+@utility arcade-glow {
+	text-shadow: 0 0 0.4em color-mix(in srgb, currentColor 45%, transparent);
+}
+@utility arcade-key {
+	background-color: var(--cap);
+	box-shadow: 0 var(--lift, 0.2rem) 0 color-mix(in srgb, var(--cap) 45%, var(--phonon-bg));
+}
+@utility arcade-key-down {
+	background-color: var(--cap);
+	box-shadow: inset 0 0.18rem 0.25rem color-mix(in srgb, var(--phonon-bg) 45%, transparent);
+}
+@utility arcade-misprint {
+	text-shadow: 0.09em 0.07em 0 color-mix(in srgb, var(--phonon-arcade-sun) 55%, transparent);
+}
+@utility arcade-shade-up {
+	mask-image: linear-gradient(to bottom, transparent, black);
+	opacity: 0.6;
+}
+@utility arcade-dots {
+	background-image: radial-gradient(
+		circle,
+		color-mix(in srgb, var(--phonon-ink) 18%, transparent) 0.9px,
+		transparent 1.3px
+	);
+	background-size: 6px 6px;
+}
+@utility phonon-crt {
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			color-mix(in srgb, var(--phonon-bg) 45%, transparent) 0 1px,
+			transparent 1px 3px
+		),
+		radial-gradient(
+			ellipse at center,
+			color-mix(in srgb, var(--phonon-arcade-night) 55%, transparent) 0%,
+			color-mix(in srgb, var(--phonon-bg) 92%, transparent) 100%
+		);
+}

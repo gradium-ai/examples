@@ -1,0 +1,55 @@
+# XcodeGen spec: `xcodegen` in this folder writes RepCoach.xcodeproj.
+name: RepCoach
+options:
+  bundleIdPrefix: sh.gradium
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+packages:
+  # Phonon, from an xn-ptts release: Swift Package Manager downloads its compiled core,
+  # PhononCore.xcframework, pinned by checksum. Keep in step with VERSION in scripts/fetch-model.sh.
+  PhononTTS:
+    url: https://github.com/gradium-ai/xn-ptts
+    exactVersion: 0.4.0
+  RepCoachCore:
+    path: RepCoachCore
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  RepCoach:
+    type: application
+    platform: iOS
+    sources:
+      - path: RepCoach
+      # The Core ML voice model from `export_coreml`, copied into the app as a folder. Without it
+      # (only Models/README.md) the app builds and runs with the system voice.
+      - path: Models
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: PhononTTS
+        product: ptts
+      - package: RepCoachCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: sh.gradium.repcoach
+        TARGETED_DEVICE_FAMILY: "1"
+    info:
+      path: RepCoach/Info.plist
+      properties:
+        CFBundleDisplayName: RepCoach
+        NSMotionUsageDescription: RepCoach records your AirPods' head motion alongside a workout when sensor recording is on in Settings. It stays on your iPhone.
+        NSCameraUsageDescription: RepCoach watches your movement on the front camera to count your reps. Video is never saved, and nothing leaves your iPhone.
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Pose recordings in Documents/Recordings show up in Finder and the Files app.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIApplicationSupportsIndirectInputEvents: true

@@ -18,6 +18,8 @@ Each folder is self-contained: its own README, dependencies, and run instruction
 
 | Example | What it does |
 |---------|--------------|
+| **[offline-dino-game](offline-dino-game/)** | Run Phonon, Gradium's on-device text-to-speech model, in the browser. Use it as a reference, or build on it, for your own web app with Phonon. The app is a dino browser game where Rex roasts you as you play, every line spoken live by Phonon in the tab. |
+| **[rep-coach](rep-coach/)** | Run Phonon, Gradium's on-device text-to-speech model, in an iPhone app. Use it as a reference, or build on it, for your own iOS app with Phonon. The app is a rep counter for the gym that counts your reps and coaches you out loud, with no network. |
 | **[genz-translator](genz-translator/)** | Speak normally and read your words rewritten into GenZ slang, live and karaoke-style. Gradium streaming STT → LLM rewrite → tokens streamed to the browser. |
 | **[tts-latency-race](tts-latency-race/)** | Race six streaming Text-to-Speech models from Gradium, ElevenLabs, Cartesia and Fish Audio on the same sentence, fired at the same instant. One waveform per model and time to first audio measured the way a listener hears it. |
 | **[voice-design-demo](voice-design-demo/)** | Give a voice agent a voice that adapts to context. Jev reads tone and energy from a customer message, the app reuses an exact matching voice or generates and saves one automatically, then speaks the reply with Gradium TTS. A trace panel shows every request and its latency. [Live demo](https://voice-design-demo.thomassegura.workers.dev). |
@@ -141,7 +143,7 @@ file.
 
 ## Getting started
 
-Every example needs a Gradium API key:
+Most examples need a Gradium API key:
 
 ```bash
 export GRADIUM_API_KEY=your_gradium_key
