@@ -1,12 +1,11 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["websockets>=13", "ormsgpack>=1.5", "numpy>=1.26"]
+# dependencies = ["websockets>=14", "ormsgpack>=1.5", "numpy>=1.26", "httpx[http2]>=0.27"]
 # ///
 """TTS latency race: the same sentence fired at every streaming TTS model at the same instant.
 
     Gradium default            wss://api.gradium.ai/api/speech/tts      output_format pcm (48 kHz)
-    Gradium beta               same socket, model gradium-tts-beta-202609
-    ElevenLabs v3 conv.        wss://api.elevenlabs.io  text-to-dialogue/stream-input, pcm_24000
+    ElevenLabs v4 turbo        wss://api.elevenlabs.io  text-to-dialogue/stream-input, pcm_24000
     ElevenLabs flash v2.5      wss://api.elevenlabs.io  text-to-speech/{voice}/stream-input, pcm_24000
     Cartesia sonic-3.6         wss://api.cartesia.ai/tts/websocket      pcm_s16le 24 kHz
     Fish Audio s2.1-pro        wss://api.fish.audio/v1/tts/live         msgpack, pcm 24 kHz
@@ -16,8 +15,8 @@ session setup *before* Go, then writes the text to every lane at the same
 instant and relays each audio chunk to the browser with a server-side
 timestamp. The page draws one waveform per lane and shows time to first audio.
 
-One lane per model: both Gradium lanes speak with the same voice, so the only
-difference between them is the model tag.
+One lane per model: the three ElevenLabs lanes speak with the same voice, so the
+only difference between them is the model tag.
 
 Measurement: the same methodology as Coval's public benchmarks repo,
 https://github.com/coval-ai/benchmarks (docs/methodology.md), so these numbers
@@ -54,6 +53,9 @@ from urllib.parse import urlparse
 import numpy as np
 import ormsgpack
 import websockets
+
+import providers
+import providers._util
 from websockets.protocol import State
 
 HERE = Path(__file__).resolve().parent
@@ -67,17 +69,11 @@ LANES = {
     "gradium": {
         "label": "Gradium", "runner": "gradium", "key_env": "GRADIUM_API_KEY", "host": "api.gradium.ai",
         "model": "default",
-        "voice": "4rdlkbxRv4m3UQTW",                          # Tilly, British English, from the public catalog
+        "voice": "4SZHfMpw-p46Ywgs",
     },
-    "gradium_beta": {
-        "label": "Gradium beta", "runner": "gradium", "key_env": "GRADIUM_API_KEY", "host": "api.gradium.ai",
-        "model": "gradium-tts-beta-202609",
-        "model_label": "beta",                                 # same voice as the lane above, so only the model differs
-        "voice": "4rdlkbxRv4m3UQTW",
-    },
-    "elevenlabs_v3": {
+    "elevenlabs_v4_turbo": {
         "label": "ElevenLabs", "runner": "elevenlabs", "key_env": "ELEVENLABS_API_KEY", "host": "api.elevenlabs.io",
-        "model": "eleven_v3_conversational",                   # v3 speaks the text-to-dialogue socket
+        "model": "eleven_v4_turbo",                            # their current realtime model (~100 ms), dialogue socket
         "voice": "29vD33N1CtxCmqQRPOHJ",                       # Drew
     },
     "elevenlabs_flash": {
@@ -89,14 +85,24 @@ LANES = {
         "label": "Cartesia", "runner": "cartesia", "key_env": "CARTESIA_API_KEY", "host": "api.cartesia.ai",
         "model": "sonic-3.6",
         "voice": "30894953-bcce-41fe-892c-15ce19c843ff",       # Parker
-        "version": "2025-11-04",
+        "version": "2026-08-14",                               # current API version; measured no slower than 2025-11-04
     },
     "fish": {
         "label": "Fish Audio", "runner": "fish", "key_env": "FISH_API_KEY", "host": "api.fish.audio",
-        "model": "s2.1-pro",
+        "model": "drama-3",                                    # preview; faster to first audio than s2.1-pro here and on Coval
+        "model_label": "drama-3 (preview)",
         "voice": "4501d82f5de3467ebf4d7ef095a2deee",           # Marlowe
         "latency": "low",                                      # Fish's documented lowest-latency mode
     },
+    # ---- plugin lanes: providers/<provider>.py, adapted from Coval's open runner where it has a
+    # client. Each provider's fastest model by Coval's live TTS leaderboard, with Coval's default voice.
+    "inworld": {"label": "Inworld", "provider": "inworld", "model": "inworld-tts-2-flash", "voice": "Brooke"},
+    "deepgram_flux": {"label": "Deepgram", "provider": "deepgram", "model": "flux-haley-en", "voice": "flux-haley-en"},
+    "rime": {"label": "Rime", "provider": "rime", "model": "coda", "voice": "luna"},
+    "minimax": {"label": "MiniMax", "provider": "minimax", "model": "speech-2.8-turbo", "voice": "English_expressive_narrator"},
+    # fastest OpenAI speech-endpoint model measured here; OpenAI retires all three on 2027-01-06
+    "openai": {"label": "OpenAI", "provider": "openai", "model": "gpt-4o-mini-tts-2025-03-20", "voice": "alloy"},
+    "assemblyai": {"label": "AssemblyAI", "provider": "assemblyai", "model": "assemblyai-tts-1", "voice": "aai-audrey"},
 }
 
 
@@ -114,7 +120,34 @@ def load_key(name):
     return None
 
 
-KEYS = {pid: load_key(L["key_env"]) for pid, L in LANES.items()}
+# Lanes that name a `provider` are plugins (providers/<name>.py): their key names and host come
+# from the module. A module that fails to import becomes a lane that says so, not a dead server.
+BROKEN = {}
+for _pid, _L in LANES.items():
+    if "provider" in _L:
+        _L.setdefault("runner", "plugin")
+        try:
+            _mod = providers.get(_L["provider"])
+            _L.setdefault("host", _mod.HOST)
+            _L.setdefault("key_env", ", ".join(_mod.KEYS))
+        except Exception as e:  # noqa: BLE001
+            BROKEN[_pid] = f"{type(e).__name__}: {e}"[:160]
+            _L.setdefault("host", "")
+            _L.setdefault("key_env", "?")
+
+
+def lane_keys(pid):
+    """The lane's key, or for a plugin every key its module needs; None if any is missing."""
+    L = LANES[pid]
+    if pid in BROKEN:
+        return None
+    if L["runner"] != "plugin":
+        return load_key(L["key_env"])
+    got = {k: load_key(k) for k in providers.get(L["provider"]).KEYS}
+    return got if all(got.values()) else None
+
+
+KEYS = {pid: lane_keys(pid) for pid in LANES}
 
 
 RTT = {}          # host -> one TCP round trip in ms, measured once at start-up
@@ -244,18 +277,22 @@ async def open_lane(pid):
     """Connect and send the provider's setup so only the text remains to be sent at Go."""
     L, key = LANES[pid], KEYS[pid]
     runner = L["runner"]
+    if runner == "plugin":
+        conn = await providers.get(L["provider"]).open(L, key)
+        conn.setdefault("at", time.perf_counter())
+        return conn
     if runner == "gradium":
         ws = await websockets.connect("wss://api.gradium.ai/api/speech/tts",
                                       additional_headers={"x-api-key": key}, ssl=SSL_CTX, max_size=None)
         await ws.send(json.dumps({"type": "setup", "voice_id": L["voice"],
-                                  "model_name": L["model"], "output_format": "pcm"}))
+                                  "model_name": L["model"], "output_format": L.get("format", "pcm")}))
         ready = json.loads(await asyncio.wait_for(ws.recv(), 8))
         if ready.get("type") != "ready":
             await ws.close()
             raise RuntimeError(str(ready.get("message") or ready)[:120])
         return {"ws": ws, "sr": int(ready.get("sample_rate") or 48000), "at": time.perf_counter()}
     if runner == "elevenlabs":
-        dialogue = L["model"].startswith("eleven_v3")
+        dialogue = L["model"].startswith(("eleven_v3", "eleven_v4"))   # v3 and v4 only speak the dialogue socket
         url = (f"wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input?model_id={L['model']}&output_format=pcm_{SR}"
                if dialogue else
                f"wss://api.elevenlabs.io/v1/text-to-speech/{L['voice']}/stream-input?model_id={L['model']}&output_format=pcm_{SR}")
@@ -281,8 +318,33 @@ async def open_lane(pid):
 
 def fresh(pid, c):
     """A pooled socket is usable while it is inside its provider's idle window and still open."""
-    ttl = POOL_TTL_ELEVEN if LANES[pid]["runner"] == "elevenlabs" else POOL_TTL
-    return c is not None and time.perf_counter() - c["at"] < ttl and c["ws"].state is State.OPEN
+    if c is None:
+        return False
+    L = LANES[pid]
+    ttl = L.get("pool_ttl", POOL_TTL_ELEVEN if L["runner"] == "elevenlabs" else POOL_TTL)
+    if time.perf_counter() - c["at"] >= ttl:
+        return False
+    if L["runner"] == "plugin":
+        mod = providers.get(L["provider"])
+        if hasattr(mod, "alive"):
+            return mod.alive(c)
+        return providers._util.ws_alive(c) if "ws" in c else providers._util.http_alive(c)
+    return c["ws"].state is State.OPEN
+
+
+async def close_conn(pid, c):
+    """Drop a pooled connection that will not be used."""
+    try:
+        L = LANES[pid]
+        mod = providers.get(L["provider"]) if L["runner"] == "plugin" else None
+        if mod is not None and hasattr(mod, "close"):
+            await mod.close(c)
+        elif c.get("ws") is not None:
+            await c["ws"].close()
+        elif c.get("http") is not None:
+            await c["http"].aclose()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def take_pooled(pid):
@@ -290,7 +352,7 @@ def take_pooled(pid):
     if fresh(pid, c):
         return c
     if c:
-        asyncio.ensure_future(c["ws"].close())       # stale: the lane opens a fresh one, before its own t0
+        asyncio.ensure_future(close_conn(pid, c))    # stale: the lane opens a fresh one, before its own t0
     return None
 
 
@@ -301,7 +363,7 @@ async def prewarm():
             return
         old = POOL.pop(pid, None)
         if old:
-            await old["ws"].close()
+            await close_conn(pid, old)
         try:
             POOL[pid] = await asyncio.wait_for(open_lane(pid), 10)
         except Exception as e:  # noqa: BLE001
@@ -403,7 +465,13 @@ async def run_fish(lane, text, conn=None):
     await lane.done()
 
 
-RUNNERS = {"gradium": run_gradium, "elevenlabs": run_elevenlabs, "cartesia": run_cartesia, "fish": run_fish}
+async def run_plugin(lane, text, conn=None):
+    conn = conn or await open_lane(lane.pid)
+    await providers.get(LANES[lane.pid]["provider"]).run(lane, text, conn)
+
+
+RUNNERS = {"gradium": run_gradium, "elevenlabs": run_elevenlabs, "cartesia": run_cartesia, "fish": run_fish,
+           "plugin": run_plugin}
 
 
 async def race(text, emit):
@@ -534,9 +602,10 @@ def main():
     ap.add_argument("--port", type=int, default=8403)
     a = ap.parse_args()
     for pid, L in LANES.items():
-        log(f"  {L['label']:<14} {'key ok' if KEYS[pid] else 'NO KEY (' + L['key_env'] + ')':<28} model={L['model']}")
+        state = f"BROKEN ({BROKEN[pid]})" if pid in BROKEN else ("key ok" if KEYS[pid] else f"NO KEY ({L['key_env']})")
+        log(f"  {L['label']:<14} {state:<28} model={L['model']}")
     if not any(KEYS.values()):
-        log("\n  no keys found: set GRADIUM_API_KEY (and optionally ELEVENLABS_API_KEY, CARTESIA_API_KEY)\n")
+        log("\n  no keys found: set at least one provider's key in .env (see .env.example)\n")
         return 1
     if a.host not in ("127.0.0.1", "localhost", "::1"):
         log(f"\n  warning: bound to {a.host}, so anyone who can reach this port can spend your API keys\n")
