@@ -167,14 +167,32 @@ function resetLane(L) {
   L.el.querySelector('.err').textContent = '';
   L.el.querySelector('.modelname').hidden = false;
 }
+// One colour per provider. The first four have hand-picked colours in style.css; every other
+// provider gets a stable muted one from this list, keyed by its name, so it keeps its colour
+// between runs. Gradium's yellow is never handed out.
+const PALETTE = ['#d08770', '#8fbcbb', '#b48ead', '#a3be8c', '#e5a46b', '#88a2d6', '#c9a0dc', '#7fb7a4',
+  '#d4a5a5', '#9fb4c7', '#c7b07a', '#8fa77a', '#c48aa8', '#7aa6c2', '#b5a3d1', '#a8c084'];
+const OWN_COLOUR = ['gradium', 'elevenlabs', 'cartesia', 'fish'];
+function providerColour(pid) {
+  const p = pid.split('_')[0];
+  if (OWN_COLOUR.includes(p)) return null;
+  let h = 0;
+  for (const ch of p) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
 function build(cfg) {
   S.order = Object.keys(cfg.lanes);
   $('#race').innerHTML = '';
+  const missing = S.order.filter((p) => !cfg.lanes[p].configured).length;
+  $('#showall').parentElement.hidden = !missing;
+  $('#showall-n').textContent = missing;
   for (const pid of S.order) {
     const c = cfg.lanes[pid];
     const el = document.createElement('div');
     el.className = 'lane' + (c.configured ? '' : ' off');
     el.dataset.lane = pid;
+    const own = providerColour(pid);
+    if (own) el.style.setProperty('--c', own);
     el.innerHTML = `
       <div class="meta">
         <div class="name"><span class="swatch"></span>${c.label}<span class="rank"></span></div>
@@ -199,8 +217,9 @@ function reorder(first) {
   for (const [L, top] of was) {
     const dy = top - L.el.getBoundingClientRect().top;
     if (!dy) continue;
-    L.el.style.cssText = `transition: none; transform: translateY(${dy}px)`;
-    requestAnimationFrame(() => { L.el.style.cssText = 'transition: transform .35s cubic-bezier(.2,.7,.2,1)'; });
+    L.el.style.transition = 'none';                         // not cssText: that would wipe the lane's --c colour
+    L.el.style.transform = `translateY(${dy}px)`;
+    requestAnimationFrame(() => { L.el.style.transition = 'transform .35s cubic-bezier(.2,.7,.2,1)'; L.el.style.transform = ''; });
   }
 }
 function rank() {
@@ -287,6 +306,7 @@ async function go(e) {
   $('#text').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#form').requestSubmit(); }
   });
+  $('#showall').addEventListener('change', (e) => document.body.classList.toggle('showall', e.target.checked));
   $('#breakdown').addEventListener('change', (e) => {
     S.bars = e.target.checked;
     $('#legend').hidden = !S.bars;

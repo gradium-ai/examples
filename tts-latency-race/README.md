@@ -1,17 +1,22 @@
 # TTS Latency Race 🏁
 
-One sentence, fired at six streaming Text-to-Speech models at the same
+One sentence, fired at eleven streaming Text-to-Speech models from ten providers at the same
 instant. Each lane draws what came back and shows the time a listener actually
 waits before hearing the first sound.
 
 ```
 browser                     server (holds the keys)
    │  text                     ├── Gradium default        wss://api.gradium.ai/api/speech/tts   pcm 48 kHz
-   ├──────────────────────────►├── Gradium beta           same socket, gradium-tts-beta-202609
-   │                           ├── ElevenLabs v3 conv.    wss://api.elevenlabs.io  dialogue     pcm 24 kHz
+   ├──────────────────────────►├── ElevenLabs v4 turbo    wss://api.elevenlabs.io  dialogue     pcm 24 kHz
    │                           ├── ElevenLabs flash v2.5  wss://api.elevenlabs.io  stream-input pcm 24 kHz
-   │  NDJSON: first, landed,   ├── Cartesia sonic-3.6     wss://api.cartesia.ai/tts/websocket   pcm 24 kHz
-   │  audio, done              └── Fish Audio s2.1-pro    wss://api.fish.audio/v1/tts/live      pcm 24 kHz
+   │                           ├── Cartesia sonic-3.6     wss://api.cartesia.ai/tts/websocket   pcm 24 kHz
+   │                           ├── Fish Audio drama-3     wss://api.fish.audio/v1/tts/live      pcm 24 kHz
+   │                           ├── Inworld TTS 2 Flash    wss://api.inworld.ai                  pcm 24 kHz
+   │                           ├── Deepgram Flux          wss://api.deepgram.com/v2/speak       pcm 24 kHz
+   │  NDJSON: first, landed,   ├── Rime coda              wss://users-ws.rime.ai/ws3            pcm 24 kHz
+   │  audio, done              ├── MiniMax speech-2.8     wss://api.minimax.io                  pcm 24 kHz
+   │                           ├── OpenAI gpt-4o-mini-tts https://api.openai.com (HTTP/2)       pcm 24 kHz
+   │                           └── AssemblyAI TTS 1       https://tts.us.assemblyai.com         pcm 24 kHz
    ◄───────────────────────────
    one waveform per lane, time to first audio per lane, sorted as they answer
 ```
@@ -34,16 +39,22 @@ comparable with theirs with those two in mind.
 ## Setup
 
 ```bash
-export GRADIUM_API_KEY=your_gradium_key
-export ELEVENLABS_API_KEY=your_elevenlabs_key   # optional
-export CARTESIA_API_KEY=your_cartesia_key       # optional
-export FISH_API_KEY=your_fish_key               # optional
+cp .env.example .env    # then fill in the keys you have
 ```
 
-Keys can also go in a `.env` file next to `server.py` (gitignored). They stay on
-the server and the browser never sees one: the page is told only which
-environment variable a lane is missing. A lane with no key is greyed out and
-sits out the race, so the Gradium key alone is enough to run it.
+[`.env.example`](.env.example) lists one variable per provider. Keys can also be
+exported in the shell, which takes precedence over `.env`. They stay on the
+server and the browser never sees one: the page is told only which environment
+variable a lane is missing. A lane with no key sits out the race and is hidden
+behind **show the lanes without a key**, so the Gradium key alone is enough to
+run it.
+
+Each lane uses its provider's fastest streaming model on Coval's live
+[TTS leaderboard](https://benchmarks.coval.ai/tts), with Coval's default voice,
+checked here against each provider's alternatives (Deepgram Flux against Aura 2,
+Rime coda against mistv3, Fish drama-3 against s2.1-pro, OpenAI's model
+snapshots). Fish drama-3 is still a preview. OpenAI retires all three of its
+speech-endpoint models on 2027-01-06.
 
 ## Run it
 
@@ -84,7 +95,7 @@ so the lanes are comparable with each other and with Coval's published runs:
   not the path to the origin.
 - **Same wire settings everywhere**: raw PCM out, so no container and no decode
   step, one sentence in one frame, one voice per provider. Each model speaks the
-  socket its provider documents for it: ElevenLabs v3 uses `text-to-dialogue`,
+  socket its provider documents for it: ElevenLabs v4 turbo uses `text-to-dialogue`,
   flash uses `text-to-speech/{voice}/stream-input`.
 - **Every provider gets its session setup out of the way before the clock**, so
   no lane pays for the other side's handshake inside its own number.
@@ -118,7 +129,8 @@ provider's edge, so run it from where your users are.
 
 ## Files
 
-- [server.py](server.py) - the four provider clients, the timing, and the NDJSON stream to the page
+- [server.py](server.py) - the lanes, the Gradium, ElevenLabs, Cartesia and Fish clients, the timing, and the NDJSON stream to the page
+- [providers/](providers/) - one module per other provider, adapted from [Coval's runner](https://github.com/coval-ai/benchmarks/tree/main/runner/src/coval_bench/providers/tts) (Apache-2.0); [`_try.py`](providers/_try.py) runs one of them on its own
 - [index.html](index.html), [style.css](style.css), [app.js](app.js) - the page: one textarea, one button, one lane per model
 
 ## Changing the lanes
@@ -126,6 +138,10 @@ provider's edge, so run it from where your users are.
 Everything configurable sits in the `LANES` dict at the top of `server.py`:
 label, model tag, voice id, host, and which `runner` speaks that provider's
 protocol. Adding another model of a provider already there is one dict entry.
-Adding a new provider is one entry plus one coroutine that calls `lane.t0()`
-right before sending the text and `lane.audio(pcm_bytes)` for every chunk; the
-`Lane` class does the rest of the timing.
+Adding a new provider is one entry with `"provider": "<name>"` plus a module
+`providers/<name>.py` with `KEYS`, `HOST`, `open()` and `run()`; the contract
+is in [providers/\_\_init\_\_.py](providers/__init__.py). `open()` connects
+and sends any setup before Go; `run()` calls `lane.t0()` right before sending the
+text and `lane.audio(pcm_bytes)` for every chunk. The `Lane` class does the rest
+of the timing. Try a module alone with
+`uv run providers/_try.py <name> --model <m> --voice <v>`.

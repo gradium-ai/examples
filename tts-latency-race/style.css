@@ -83,3 +83,7 @@ textarea:focus { outline: 2px solid var(--yellow); outline-offset: -1px; }
 .ruler canvas { width: 100%; height: 22px; display: block; }
 .foot { color: var(--faint); font-size: .85rem; margin-top: 1.4rem; }
 .foot a { color: var(--muted); }
+
+/* lanes without a key stay out of the way until asked for */
+.lane.off { display: none; }
+body.showall .lane.off { display: grid; }
